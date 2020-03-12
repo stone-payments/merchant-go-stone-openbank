@@ -24,6 +24,7 @@ const (
 type Client struct {
 	client *http.Client
 	log    *logrus.Entry
+	debug  bool
 
 	AccountURL *url.URL
 	ApiBaseURL *url.URL
@@ -106,6 +107,13 @@ func SetUserAgent(ua string) ClientOpt {
 	}
 }
 
+func EnableDebug() ClientOpt {
+	return func(c *Client) {
+		c.debug = true
+	}
+
+}
+
 func (c *Client) ApplyOpts(opts ...ClientOpt) {
 	for _, opt := range opts {
 		opt(c)
@@ -154,7 +162,6 @@ func CheckResponse(r *http.Response) error {
 }
 
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
-	debug := true
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -165,7 +172,7 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 			err = rerr
 		}
 	}()
-	if debug {
+	if c.debug {
 		dr, _ := httputil.DumpResponse(resp, true)
 		c.log.Infof("<<< RESULT:\n%s", string(dr))
 	}
