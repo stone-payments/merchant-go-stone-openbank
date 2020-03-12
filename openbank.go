@@ -1,6 +1,7 @@
 package openbank
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,7 +41,7 @@ type Client struct {
 	Token string
 
 	//Services used for comunicating with API
-	//Account AccountService
+	Account *AccountService
 }
 
 //vhttpClient *http.Client, sandbox bool, clientID, consentRedirectURL strinxg
@@ -66,7 +67,7 @@ func NewClient(opts ...ClientOpt) *Client {
 	c.log = log
 
 	//Set services
-	//c.Account = &AccountServiceOp{client: c}
+	c.Account = &AccountService{client: &c}
 
 	return &c
 }
@@ -159,6 +160,33 @@ func CheckResponse(r *http.Response) error {
 	}
 
 	return errorResponse
+}
+
+// NewRequest creates an API request. A relative URL can be provided in urlStr, which will be resolved to the
+// ApiBaseURL of the Client.
+func (c *Client) NewAPIRequest(method, urlStr string, body interface{}) (*http.Request, error) {
+	u, err := c.ApiBaseURL.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := new(bytes.Buffer)
+	if body != nil {
+		err := json.NewEncoder(buf).Encode(body)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	req, err := http.NewRequest(method, u.String(), buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("User-Agent", c.UserAgent)
+	return req, nil
 }
 
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
