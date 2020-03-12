@@ -21,6 +21,13 @@ type Account struct {
 	RestrictedFeatures bool   `json:"restricted_features"`
 }
 
+//TODO: CreateNewIdentity
+//TODO: GetBalance
+//TODO: GetStatement
+//TODO: GetFees
+//TODO: ListFees
+//TODO: GetStatementEntry
+
 // Get account info
 func (s *AccountService) Get(id string) (*Account, *Response, error) {
 
