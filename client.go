@@ -162,10 +162,10 @@ func CheckResponse(r *http.Response) error {
 	return errorResponse
 }
 
-// NewRequest creates an API request. A relative URL can be provided in urlStr, which will be resolved to the
+// NewAPIRequest creates an API request. A relative URL PATH can be provided in pathStr, which will be resolved to the
 // ApiBaseURL of the Client.
-func (c *Client) NewAPIRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-	u, err := c.ApiBaseURL.Parse(urlStr)
+func (c *Client) NewAPIRequest(method, pathStr string, body interface{}) (*http.Request, error) {
+	u, err := c.ApiBaseURL.Parse(pathStr)
 	if err != nil {
 		return nil, err
 	}
