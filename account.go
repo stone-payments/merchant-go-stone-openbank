@@ -21,8 +21,13 @@ type Account struct {
 	RestrictedFeatures bool   `json:"restricted_features"`
 }
 
+type Balance struct {
+	Balance          int `json:"balance"`
+	BlockedBalance   int `json:"blocked_balance"`
+	ScheduledBalance int `json:"scheduled_balance"`
+}
+
 //TODO: CreateNewIdentity
-//TODO: GetBalance
 //TODO: GetStatement
 //TODO: GetFees
 //TODO: ListFees
@@ -72,4 +77,23 @@ func (s *AccountService) List() ([]Account, *Response, error) {
 	}
 
 	return dataResp.Data, resp, err
+}
+
+//Get Balance
+func (s *AccountService) GetBalance(id string) (*Balance, *Response, error) {
+
+	path := fmt.Sprintf("/api/v1/accounts/%s/balance", id)
+
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var balance Balance
+	resp, err := s.client.Do(req, &balance)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return &balance, resp, err
 }
