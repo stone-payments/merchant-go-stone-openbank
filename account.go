@@ -3,6 +3,8 @@ package openbank
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/dlpco/go-stone-openbank/types"
 )
 
 // AccountService handles communication with Stone Openbank API
@@ -10,31 +12,13 @@ type AccountService struct {
 	client *Client
 }
 
-//Account represents a Stone PaymentAccount
-type Account struct {
-	AccountCode        string `json:"account_code"`
-	BranchCode         string `json:"branch_code"`
-	ID                 string `json:"id"`
-	OwnerDocument      string `json:"owner_document"`
-	OwnerID            string `json:"owner_id"`
-	OwnerName          string `json:"owner_name"`
-	RestrictedFeatures bool   `json:"restricted_features"`
-}
-
-type Balance struct {
-	Balance          int `json:"balance"`
-	BlockedBalance   int `json:"blocked_balance"`
-	ScheduledBalance int `json:"scheduled_balance"`
-}
-
 //TODO: CreateNewIdentity
-//TODO: GetStatement
 //TODO: GetFees
 //TODO: ListFees
 //TODO: GetStatementEntry
 
 // Get account info
-func (s *AccountService) Get(id string) (*Account, *Response, error) {
+func (s *AccountService) Get(id string) (*types.Account, *Response, error) {
 
 	path := fmt.Sprintf("/api/v1/accounts/%s", id)
 
@@ -43,7 +27,7 @@ func (s *AccountService) Get(id string) (*Account, *Response, error) {
 		return nil, nil, err
 	}
 
-	var account Account
+	var account types.Account
 	resp, err := s.client.Do(req, &account)
 	if err != nil {
 		return nil, resp, err
@@ -53,7 +37,7 @@ func (s *AccountService) Get(id string) (*Account, *Response, error) {
 }
 
 // List accounts
-func (s *AccountService) List() ([]Account, *Response, error) {
+func (s *AccountService) List() ([]types.Account, *Response, error) {
 
 	path := "/api/v1/accounts?paginate=true"
 
@@ -63,12 +47,8 @@ func (s *AccountService) List() ([]Account, *Response, error) {
 	}
 
 	var dataResp struct {
-		Cursor struct {
-			After  *int
-			Before *int
-			Limit  *int
-		} `json:"cursor"`
-		Data []Account `json:"data"`
+		Cursor types.Cursor    `json:"cursor"`
+		Data   []types.Account `json:"data"`
 	}
 
 	resp, err := s.client.Do(req, &dataResp)
@@ -79,8 +59,8 @@ func (s *AccountService) List() ([]Account, *Response, error) {
 	return dataResp.Data, resp, err
 }
 
-//Get Balance
-func (s *AccountService) GetBalance(id string) (*Balance, *Response, error) {
+//Get Account Balance
+func (s *AccountService) GetBalance(id string) (*types.Balance, *Response, error) {
 
 	path := fmt.Sprintf("/api/v1/accounts/%s/balance", id)
 
@@ -89,11 +69,34 @@ func (s *AccountService) GetBalance(id string) (*Balance, *Response, error) {
 		return nil, nil, err
 	}
 
-	var balance Balance
+	var balance types.Balance
 	resp, err := s.client.Do(req, &balance)
 	if err != nil {
 		return nil, resp, err
 	}
 
 	return &balance, resp, err
+}
+
+//Get Account Statement
+func (s *AccountService) GetStatement(id string) ([]types.Statement, *Response, error) {
+
+	path := fmt.Sprintf("/api/v1/accounts/%s/statement", id)
+
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var dataResp struct {
+		Cursor types.Cursor      `json:"cursor"`
+		Data   []types.Statement `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &dataResp)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return dataResp.Data, resp, err
 }
