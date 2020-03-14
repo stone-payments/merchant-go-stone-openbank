@@ -1,6 +1,7 @@
 package openbank
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,9 +14,6 @@ type AccountService struct {
 }
 
 //TODO: CreateNewIdentity
-//TODO: GetFees
-//TODO: ListFees
-//TODO: GetStatementEntry
 
 // Get account info
 func (s *AccountService) Get(id string) (*types.Account, *Response, error) {
@@ -91,6 +89,69 @@ func (s *AccountService) GetStatement(id string) ([]types.Statement, *Response, 
 	var dataResp struct {
 		Cursor types.Cursor      `json:"cursor"`
 		Data   []types.Statement `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &dataResp)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return dataResp.Data, resp, err
+}
+
+// Get Statement Entry
+func (s *AccountService) GetStatementEntry(id string) (*types.Statement, *Response, error) {
+
+	path := fmt.Sprintf("/api/v1/statement/entries/%s", id)
+
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var statement types.Statement
+	resp, err := s.client.Do(req, &statement)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return &statement, resp, err
+}
+
+// Get Account Fees of FeeType
+func (s *AccountService) GetFees(accountID string, feeType string) (*types.Fee, *Response, error) {
+	if feeType == "" {
+		return nil, nil, errors.New("missing feeType value")
+	}
+
+	path := fmt.Sprintf("/api/v1/accounts/%s/fees/%s", accountID, feeType)
+
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var fee types.Fee
+	resp, err := s.client.Do(req, &fee)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return &fee, resp, err
+}
+
+// Get Account Fees
+func (s *AccountService) LsitFees(accountID string) ([]types.Fee, *Response, error) {
+	path := fmt.Sprintf("/api/v1/accounts/%s/fees", accountID)
+
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var dataResp struct {
+		Cursor types.Cursor `json:"cursor"`
+		Data   []types.Fee  `json:"data"`
 	}
 
 	resp, err := s.client.Do(req, &dataResp)

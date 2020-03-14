@@ -70,3 +70,22 @@ type CounterParty struct {
 		DocumentType string `json:"document_type,omitempty"`
 	} `json:"entity"`
 }
+
+type Fee struct {
+	Amount                      int    `json:"amount"`
+	FeeType                     string `json:"fee_type"`
+	BillingExemptionParticipant bool   `json:"billing_exemption_participant"`
+	OriginalFee                 int    `json:"original_fee"`
+	MaxFreeTransfers            int    `json:"max_free_transfers"`
+	RemainingFreeTransfers      int    `json:"remaining_free_transfers"`
+}
+
+func ListFeeTypes() []string {
+	return []string{
+		"internal_transfer",
+		"external_transfer",
+		"barcode_payment",
+		"outbond_stone_prepaid_card_wirhdrawal",
+		"barcode_payment_invoice",
+	}
+}
