@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dlpco/go-stone-openbank/types"
+	"github.com/stone-co/go-stone-openbank/types"
 )
 
 // AccountService handles communication with Stone Openbank API

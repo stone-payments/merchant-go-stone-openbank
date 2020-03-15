@@ -1,4 +1,4 @@
-module github.com/dlpco/go-stone-openbank
+module github.com/stone-co/go-stone-openbank
 
 go 1.14
 

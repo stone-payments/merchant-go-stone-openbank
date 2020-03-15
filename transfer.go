@@ -5,7 +5,7 @@ import (
 
 	"net/http"
 
-	"github.com/dlpco/go-stone-openbank/types"
+	"github.com/stone-co/go-stone-openbank/types"
 )
 
 // TransferService handles communication with Stone Openbank API
@@ -98,6 +98,11 @@ func (s *TransferService) Transfer(input types.TransferInput, idempotencyKey str
 	if err != nil {
 		return nil, nil, err
 	}
+
+	if idempotencyKey != "" {
+		req.Header.Add("x-stone-idempotency-key", idempotencyKey)
+	}
+
 	var transfer types.Transfer
 	resp, err := s.client.Do(req, &transfer)
 	if err != nil {
