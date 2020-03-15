@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -31,36 +30,36 @@ func main() {
 		log.Fatal(err)
 	}
 	for i := range accounts {
-		fmt.Printf("acc[%d]: %v\n\n", i, accounts[i])
+		log.Printf("acc[%d]: %v\n\n", i, accounts[i])
 		acc, _, err := client.Account.Get(accounts[i].ID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Detailed account: %+v", acc)
+		log.Printf("Detailed account: %+v", acc)
 
 		balance, _, err := client.Account.GetBalance(accounts[i].ID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Balance: %+v", balance)
+		log.Printf("Balance: %+v", balance)
 
 		statement, _, err := client.Account.GetStatement(accounts[i].ID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Statement: %+v", statement)
+		log.Printf("Statement: %+v", statement)
 
-		fees, _, err := client.Account.GetFees(accounts[i].ID, "")
+		fees, _, err := client.Account.ListFees(accounts[i].ID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("AllFees: %+v", fees)
+		log.Printf("AllFees: %+v", fees)
 
 		fee, _, err := client.Account.GetFees(accounts[i].ID, "internal_transfer")
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Fee: %+v", fee)
+		log.Printf("Fee: %+v", fee)
 
 		//Internal DryRun Transfer
 		transfInput := types.TransferInput{
@@ -78,14 +77,14 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Transfer(dry-run): %+v", transfer)
+		log.Printf("Transfer(dry-run): %+v", transfer)
 
 		//Internal Transfer
 		transfer, _, err = client.Transfer.Transfer(transfInput, idempotencyKey)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Transfer: %+v", transfer)
+		log.Printf("Transfer: %+v", transfer)
 
 		//External DryRun Transfer
 		transfExtInput := types.TransferInput{
@@ -108,13 +107,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("External Transfer(dry-run): %+v", transfer)
+		log.Printf("External Transfer(dry-run): %+v", transfer)
 
 		//External  Transfer
 		transfer, _, err = client.Transfer.Transfer(transfExtInput, idempotencyKey)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("External Transfer: %+v", transfer)
+		log.Printf("External Transfer: %+v", transfer)
 	}
 }

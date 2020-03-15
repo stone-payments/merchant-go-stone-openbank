@@ -192,6 +192,11 @@ func (c *Client) NewAPIRequest(method, pathStr string, body interface{}) (*http.
 }
 
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
+	if c.debug {
+		d, _ := httputil.DumpRequestOut(req, true)
+		c.log.Infof(">>> REQUEST:\n%s", string(d))
+	}
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
