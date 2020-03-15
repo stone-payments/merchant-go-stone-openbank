@@ -141,7 +141,7 @@ func (s *AccountService) GetFees(accountID string, feeType string) (*types.Fee, 
 }
 
 // Get Account Fees
-func (s *AccountService) LsitFees(accountID string) ([]types.Fee, *Response, error) {
+func (s *AccountService) ListFees(accountID string) ([]types.Fee, *Response, error) {
 	path := fmt.Sprintf("/api/v1/accounts/%s/fees", accountID)
 
 	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)

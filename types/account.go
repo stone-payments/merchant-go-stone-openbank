@@ -64,11 +64,7 @@ type CounterParty struct {
 		BranchCode      string `json:"branch_code,omitempty"`
 		AccountType     string `json:"account_type,omitempty"`
 	} `json:"account"`
-	Entity struct {
-		Name         string `json:"name,omitempty"`
-		Document     string `json:"document,omitempty"`
-		DocumentType string `json:"document_type,omitempty"`
-	} `json:"entity"`
+	Entity Entity `json:"entity"`
 }
 
 type Fee struct {

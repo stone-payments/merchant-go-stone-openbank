@@ -41,7 +41,8 @@ type Client struct {
 	Token string
 
 	//Services used for comunicating with API
-	Account *AccountService
+	Account  *AccountService
+	Transfer *TransferService
 }
 
 //vhttpClient *http.Client, sandbox bool, clientID, consentRedirectURL strinxg
@@ -68,6 +69,7 @@ func NewClient(opts ...ClientOpt) *Client {
 
 	//Set services
 	c.Account = &AccountService{client: &c}
+	c.Transfer = &TransferService{client: &c}
 
 	return &c
 }
