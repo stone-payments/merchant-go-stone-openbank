@@ -48,4 +48,4 @@ func main() {
 }
 ```
 
-see full [example](http://github.com/stone-co/go-stone-openbank/tree/example/mian.go)
+see full [example](http://github.com/stone-co/go-stone-openbank/tree/example)
