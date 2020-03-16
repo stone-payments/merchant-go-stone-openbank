@@ -136,3 +136,29 @@ func (s *TransferService) get(path string) (*types.Transfer, *Response, error) {
 
 	return &transfer, resp, err
 }
+
+// CancelInternal cancels a scheduled internal transference
+func (s *TransferService) CancelInternal(transferID string) (*Response, error) {
+	path := fmt.Sprintf("/api/v1/internal_transfers/%s/cancel", transferID)
+	return s.cancel(path)
+}
+
+// CancelExternal cancels a scheduled external transference
+func (s *TransferService) CancelExternal(transferID string) (*Response, error) {
+	path := fmt.Sprintf("/api/v1/external_transfers/%s/cancel", transferID)
+	return s.cancel(path)
+}
+
+func (s *TransferService) cancel(path string) (*Response, error) {
+	req, err := s.client.NewAPIRequest(http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.Do(req, nil)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, err
+}

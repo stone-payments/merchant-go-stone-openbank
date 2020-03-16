@@ -145,5 +145,49 @@ func main() {
 			}
 			log.Printf("External Transfer[%d]: %+v\n", i, transfer)
 		}
+
+		//Schedule and Cancel an internal Transfer
+		ScheduleAndCancelTransfer(accounts[i].ID, client)
 	}
+}
+
+func ScheduleAndCancelTransfer(accID string, client *openbank.Client) {
+	transfInput := types.TransferInput{
+		AccountID:   accID,
+		Amount:      100,
+		ScheduledTo: "2020-03-25",
+		Target: types.Target{
+			Account: types.TransferAccount{
+				AccountCode: "334201",
+			},
+		},
+	}
+
+	idempotencyKey := uuid.New().String()
+	transfer, _, err := client.Transfer.Transfer(transfInput, idempotencyKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Transfer: %+v", transfer)
+
+	//Check transfer status
+	intTransfer, _, err := client.Transfer.GetInternal(transfer.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Scheduled Transfer Status: %s\n", intTransfer.Status)
+
+	//Cancel transfer
+	resp, err := client.Transfer.CancelInternal(transfer.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Response from Cancel Transfer: %+v\n", resp.Response)
+
+	//Check if transfer was canceled
+	canceledTransfer, resp, err := client.Transfer.GetInternal(transfer.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Transfer Status: %s\n", canceledTransfer.Status)
 }
