@@ -109,3 +109,30 @@ func (s *TransferService) list(path string) ([]types.Transfer, *Response, error)
 
 	return dataResp.Data, resp, err
 }
+
+// GetInternal returns an internal transfer
+func (s *TransferService) GetInternal(transferID string) (*types.Transfer, *Response, error) {
+	path := fmt.Sprintf("/api/v1/internal_transfers/%s", transferID)
+	return s.get(path)
+}
+
+// GetExternal returns an external transfer
+func (s *TransferService) GetExternal(transferID string) (*types.Transfer, *Response, error) {
+	path := fmt.Sprintf("/api/v1/external_transfers/%s", transferID)
+	return s.get(path)
+}
+
+func (s *TransferService) get(path string) (*types.Transfer, *Response, error) {
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var transfer types.Transfer
+	resp, err := s.client.Do(req, &transfer)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return &transfer, resp, err
+}
