@@ -115,5 +115,19 @@ func main() {
 			log.Fatal(err)
 		}
 		log.Printf("External Transfer: %+v", transfer)
+
+		//List Internal Transfers
+		internalTransfers, _, err := client.Transfer.ListInternal(accounts[i].ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Internal Transfers: %+v\n", internalTransfers)
+
+		//List External Transfers
+		externalTransfers, _, err := client.Transfer.ListExternal(accounts[i].ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("External Transfers: %+v\n", externalTransfers)
 	}
 }

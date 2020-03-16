@@ -14,11 +14,13 @@ type TransferService struct {
 	client *Client
 }
 
+// DryRunTransfer simulate an Internal or External Transfer
 func (s *TransferService) DryRunTransfer(input types.TransferInput, idempotencyKey string) (*types.Transfer, *Response, error) {
 	path := "/api/v1/dry_run"
 	return s.transfer(input, idempotencyKey, path)
 }
 
+// Transfer makes Internal or External Transfer
 func (s *TransferService) Transfer(input types.TransferInput, idempotencyKey string) (*types.Transfer, *Response, error) {
 	path := "/api/v1"
 	return s.transfer(input, idempotencyKey, path)
@@ -75,4 +77,35 @@ func (s *TransferService) transfer(input types.TransferInput, idempotencyKey, pa
 	}
 
 	return &transfer, resp, err
+}
+
+// ListInternal returns a list of internal_transfers
+func (s *TransferService) ListInternal(accountID string) ([]types.Transfer, *Response, error) {
+	path := fmt.Sprintf("/api/v1/internal_transfers?account_id=%s", accountID)
+	return s.list(path)
+}
+
+// ListExternal returns a list of external_transfers
+func (s *TransferService) ListExternal(accountID string) ([]types.Transfer, *Response, error) {
+	path := fmt.Sprintf("/api/v1/external_transfers?account_id=%s", accountID)
+	return s.list(path)
+}
+
+func (s *TransferService) list(path string) ([]types.Transfer, *Response, error) {
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var dataResp struct {
+		Cursor types.Cursor     `json:"cursor"`
+		Data   []types.Transfer `json:"data"`
+	}
+
+	resp, err := s.client.Do(req, &dataResp)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return dataResp.Data, resp, err
 }

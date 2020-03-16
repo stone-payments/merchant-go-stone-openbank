@@ -140,7 +140,7 @@ func (s *AccountService) GetFees(accountID string, feeType string) (*types.Fee, 
 	return &fee, resp, err
 }
 
-// Get Account Fees
+// List Account Fees
 func (s *AccountService) ListFees(accountID string) ([]types.Fee, *Response, error) {
 	path := fmt.Sprintf("/api/v1/accounts/%s/fees", accountID)
 
