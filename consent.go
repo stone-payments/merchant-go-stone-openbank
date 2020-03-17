@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func (c *Client) ConsentLink() (string, error) {
-	claims := c.consentClaims()
+func (c *Client) ConsentLink(sessionID string) (string, error) {
+	claims := c.consentClaims(sessionID)
 	tokenString, err := c.generateToken(claims)
 	if err != nil {
 		return "", err
@@ -24,19 +24,21 @@ func (c *Client) ConsentLink() (string, error) {
 	return u.String(), nil
 }
 
-func (c *Client) consentClaims() jwt.MapClaims {
+func (c *Client) consentClaims(sessionID string) jwt.MapClaims {
 	now := time.Now()
-	clientSession := uuid.New().String()
+	if sessionID == "" {
+		sessionID = uuid.New().String()
+	}
 	claims := jwt.MapClaims{
 		"aud":              "accounts-hubid@openbank.stone.com.br",
 		"client_id":        c.ClientID,
 		"exp":              now.Add(time.Hour * time.Duration(2)).Unix(),
 		"iat":              now.Unix(),
 		"iss":              c.ClientID,
-		"jti":              clientSession,
+		"jti":              sessionID,
 		"nbf":              now.Unix(),
 		"redirect_uri":     c.ConsentRedirectURL,
-		"session_metadata": map[string]string{"client_session": clientSession},
+		"session_metadata": map[string]string{"client_session": sessionID},
 		"type":             "consent",
 	}
 	return claims

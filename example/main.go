@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	consentLink, err := client.ConsentLink()
+	consentLink, err := client.ConsentLink("")
 	if err != nil {
 		log.Fatal(err)
 	}
