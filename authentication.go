@@ -2,7 +2,6 @@ package openbank
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,16 +14,7 @@ import (
 
 func (c *Client) Authenticate() error {
 	claims := c.authClaims()
-	t := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), claims)
-	signBytes, err := ioutil.ReadFile(c.PrivateKeyPath)
-	if err != nil {
-		return err
-	}
-	signKey, err := jwt.ParseRSAPrivateKeyFromPEM(signBytes)
-	if err != nil {
-		return err
-	}
-	tokenString, err := t.SignedString(signKey)
+	tokenString, err := c.generateToken(claims)
 	if err != nil {
 		return err
 	}

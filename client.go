@@ -31,7 +31,7 @@ type Client struct {
 	ApiBaseURL *url.URL
 
 	ClientID           string
-	ConsentRedirectURL *url.URL
+	ConsentRedirectURL string
 	PrivateKeyPath     string
 
 	Sandbox bool
@@ -85,6 +85,12 @@ func WithClientID(key string) ClientOpt {
 func SetPrivateKey(path string) ClientOpt {
 	return func(c *Client) {
 		c.PrivateKeyPath = path
+	}
+}
+
+func SetConsentURL(url string) ClientOpt {
+	return func(c *Client) {
+		c.ConsentRedirectURL = url
 	}
 }
 

@@ -25,6 +25,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	consentLink, err := client.ConsentLink()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("\nconsent_link: %s\n", consentLink)
+
 	accounts, _, err := client.Account.List()
 	if err != nil {
 		log.Fatal(err)
