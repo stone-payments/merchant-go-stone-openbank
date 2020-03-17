@@ -52,7 +52,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Printf("Balance: %+v", balance)
-  }
+ 	}
 }
 ```
 
