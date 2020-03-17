@@ -21,10 +21,12 @@ import (
 func main() {
 	clientID := os.Getenv("STONE_CLIENT_ID")
 	privKeyPath := os.Getenv("STONE_PRIVATE_KEY")
+	consentURL := os.Getenv("STONE_CONSENT_REDIRECT_URL")
 
 	client := openbank.NewClient(
 		openbank.WithClientID(clientID),
 		openbank.SetPrivateKey(privKeyPath),
+		openbank.SetConsentURL(consentURL),
 		openbank.UseSandbox(),
 	//	openbank.EnableDebug(),
 	)
