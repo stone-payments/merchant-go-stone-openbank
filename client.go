@@ -45,7 +45,6 @@ type Client struct {
 	Transfer *TransferService
 }
 
-//vhttpClient *http.Client, sandbox bool, clientID, consentRedirectURL strinxg
 func NewClient(opts ...ClientOpt) *Client {
 
 	accountURL, _ := url.Parse(prodAccountURL)
