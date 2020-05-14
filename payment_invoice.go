@@ -3,84 +3,89 @@ package openbank
 import (
 	"errors"
 	"fmt"
-	"github.com/Nhanderu/brdoc"
-	"github.com/stone-co/go-stone-openbank/types"
-	"regexp"
+	"net/http"
 	"strings"
-	"time"
+
+	"github.com/stone-co/go-stone-openbank/types"
 )
 
-const (
-	invoiceAmountMin = 2000
-	invoiceAmountMax = 1000000
+const idempotencyKeyMaxSize = 72
 
-	invoiceTypeDeposit        = "deposit"
-	invoiceTypeProposal       = "proposal"
-	invoiceTypeBillOfExchange = "bill_of_exchange"
-)
-
-var digitsRegex = regexp.MustCompile("[0-9]+")
-
-func onlyDigits(key string) string {
-	return strings.Join(digitsRegex.FindAllString(key, -1), "")
-}
-
-// PaymentInvoiceService handles communication with Stone Openbank API
-type PaymentSlipService struct {
+// PaymentInvoiceService handlers communication with Stone Openbank API
+type PaymentInvoiceService struct {
 	client *Client
 }
 
-// PaymentSlip make
-func (s *PaymentSlipService) PaymentSlip(input types.PaymentInvoiceInput, idempotencyKey string) (*types.PaymentInvoice, *Response, error) {
+// PaymentInvoice make a bar code payment invoice
+func (s *PaymentInvoiceService) PaymentInvoice(input types.PaymentInvoiceInput, idempotencyKey string) (*types.PaymentInvoice, *Response, error) {
 	path := "/api/v1/barcode_payment_invoices"
-	return s.paymentSlip(input, idempotencyKey, path)
+	if err := input.Ok(); err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewAPIRequest(http.MethodPost, path, input)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if idempotencyKey != "" {
+		if len(idempotencyKey) > idempotencyKeyMaxSize {
+			return nil, nil, errors.New("invalid idempotency key")
+		}
+		req.Header.Add("x-stone-idempotency-key", idempotencyKey)
+	}
+
+	var paymentInvoice types.PaymentInvoice
+	resp, err := s.client.Do(req, &paymentInvoice)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return &paymentInvoice, resp, err
 }
 
-func (s *PaymentSlipService) paymentSlip(input types.PaymentInvoiceInput, idempotencyKey string, path string) (*types.PaymentInvoice, *Response, error) {
-
-	if strings.TrimSpace(input.AccountID) == "" {
+// List returns a list of PaymentInvoices
+func (s *PaymentInvoiceService) List(accountID string) ([]types.PaymentInvoice, *Response, error) {
+	path := fmt.Sprintf("/api/v1/barcode_payment_invoices/?account_id=%s", accountID)
+	if strings.TrimSpace(accountID) == "" {
 		return nil, nil, errors.New("account_id can't be empty")
 	}
 
-	if input.Amount < invoiceAmountMin || input.Amount > invoiceAmountMax {
-		return nil, nil, fmt.Errorf("amount can't be < %v or > %v", invoiceAmountMin, invoiceAmountMax)
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	_, err := time.Parse("2006-01-02", input.ExpirationDate)
-	if err != nil || time.Now().Format("2006-01-02") < input.ExpirationDate {
-		return nil, nil, errors.New("invalid expiration_date")
+	var dataResp struct {
+		Cursor types.Cursor     `json:"cursor"`
+		Data   []types.PaymentInvoice `json:"data"`
 	}
 
-	switch input.InvoiceType {
-	case invoiceTypeDeposit, invoiceTypeProposal:
-		input.LimitDate = input.ExpirationDate
-	case invoiceTypeBillOfExchange:
-		if strings.TrimSpace(input.LimitDate) == "" {
-			input.LimitDate = input.ExpirationDate
-		} else {
-			_, err := time.Parse("2006-01-02", input.LimitDate)
-			if err != nil || input.LimitDate < input.ExpirationDate {
-				return nil, nil, errors.New("invalid limit_date")
-			}
-		}
-	default:
-		return nil, nil, errors.New("invalid invoice_type")
+	resp, err := s.client.Do(req, &dataResp)
+	if err != nil {
+		return nil, resp, err
 	}
 
-	if input.InvoiceType != invoiceTypeDeposit {
-		if strings.TrimSpace(input.Payer.LegalName) == "" {
-			return nil, nil, errors.New("invalid payer legal_name")
-		}
+	return dataResp.Data, resp, err
+}
 
-		input.Payer.Document = onlyDigits(input.Payer.Document)
-		if !brdoc.IsCPF(input.Payer.Document) && !brdoc.IsCNPJ(input.Payer.Document) {
-
-		}
+// Get return a PaymentInvoice
+func (s *PaymentInvoiceService) Get(paymentInvoiceID string) (types.PaymentInvoice, *Response, error) {
+	path := fmt.Sprintf("/api/v1/barcode_payment_invoices/%s", paymentInvoiceID)
+	var paymentInvoice types.PaymentInvoice
+	if strings.TrimSpace(paymentInvoiceID) == "" {
+		return paymentInvoice, nil, errors.New("payment_invoice_id can't be empty")
 	}
 
+	req, err := s.client.NewAPIRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return paymentInvoice, nil, err
+	}
 
+	resp, err := s.client.Do(req, &paymentInvoice)
+	if err != nil {
+		return paymentInvoice, resp, err
+	}
 
-
-
-	return nil, nil, nil
+	return paymentInvoice, resp, err
 }
