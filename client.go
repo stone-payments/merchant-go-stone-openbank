@@ -43,6 +43,7 @@ type Client struct {
 	//Services used for comunicating with API
 	Account  *AccountService
 	Transfer *TransferService
+	PaymentInvoice *PaymentInvoiceService
 }
 
 //vhttpClient *http.Client, sandbox bool, clientID, consentRedirectURL strinxg
