@@ -71,6 +71,7 @@ func NewClient(opts ...ClientOpt) *Client {
 	//Set services
 	c.Account = &AccountService{client: &c}
 	c.Transfer = &TransferService{client: &c}
+	c.PaymentInvoice = &PaymentInvoiceService{client: &c}
 
 	return &c
 }
