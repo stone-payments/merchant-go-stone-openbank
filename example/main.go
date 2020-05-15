@@ -25,7 +25,7 @@ func main() {
 	//	openbank.EnableDebug(),
 	)
 	if err != nil {
-		log.Fatal(`failed creating open bank client: `, err.Error())
+		log.Fatal(err)
 	}
 
 	if err := client.Authenticate(); err != nil {
