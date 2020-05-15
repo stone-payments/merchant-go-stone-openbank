@@ -61,11 +61,12 @@ func NewClient(opts ...ClientOpt) (*Client, error) {
 	})
 
 	c := Client{
-		client:     http.DefaultClient,
-		UserAgent:  userAgent,
-		AccountURL: accountURL,
-		ApiBaseURL: apiURL,
-		log:        log,
+		client:          http.DefaultClient,
+		UserAgent:       userAgent,
+		AccountURL:      accountURL,
+		ApiBaseURL:      apiURL,
+		StonePublicKeys: make(types.StonePublicKeys),
+		log:             log,
 	}
 
 	c.ApplyOpts(opts...)

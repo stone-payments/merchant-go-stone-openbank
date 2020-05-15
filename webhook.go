@@ -1,6 +1,7 @@
 package openbank
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/square/go-jose.v2"
@@ -11,8 +12,8 @@ const (
 	stonePublicKeysEndpoint = `/api/v1/discovery/keys`
 )
 
-func (c *Client) DecryptAndValidateWebhook(encryptedData string) (json.RawMessage, error) {
-	decryptedData, err := c.DecryptJWE(encryptedData)
+func (c *Client) DecryptAndValidateWebhook(encryptedJWE string) ([]byte, error) {
+	decryptedData, err := c.DecryptJWE(encryptedJWE)
 	if err != nil {
 		return nil, fmt.Errorf(`failed at decrypting webhook: %w`, err)
 	}
@@ -22,12 +23,16 @@ func (c *Client) DecryptAndValidateWebhook(encryptedData string) (json.RawMessag
 		return nil, fmt.Errorf(`err parsing webhook data: %w`, err)
 	}
 
-	signatureKey := c.getSignatureKey(jwe.Signatures)
+	signatureKey, err := c.getSignatureKey(jwe.Signatures)
+	if err != nil {
+		return nil, fmt.Errorf(`error geting signature key: %w`)
+	}
+
 	if _, err := jwe.Verify(signatureKey); err != nil {
 		return nil, fmt.Errorf(`err verifying webhook signature: %w`, err)
 	}
 
-	payload, err := json.Marshal(jwe.FullSerialize)
+	payload, err := getPayload(jwe)
 	if err != nil {
 		return nil, fmt.Errorf(`failed serializing jwe payload: %w`, err)
 	}
@@ -35,25 +40,49 @@ func (c *Client) DecryptAndValidateWebhook(encryptedData string) (json.RawMessag
 	return payload, nil
 }
 
-func (c *Client) getSignatureKey(signatures []jose.Signature) *jose.JSONWebKey {
-	if len(signatures) != 1 {
-		return nil // multi signature not supported
+// this is a terrible workaround over JSONWebSignature to get it's private payload content
+func getPayload(jwe *jose.JSONWebSignature) ([]byte, error) {
+	jweSerialized := jwe.FullSerialize()
+	type payload struct {
+		Payload string `json:"payload"`
 	}
-	signature := signatures[0]
-	return c.getStonePublicKey(signature.Header.KeyID)
+	var p payload
+	if err := json.Unmarshal([]byte(jweSerialized), &p); err != nil {
+		return nil, err
+	}
+
+	b, err := base64.StdEncoding.DecodeString(p.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
-func (c *Client) getStonePublicKey(id string) *jose.JSONWebKey {
+func (c *Client) getSignatureKey(signatures []jose.Signature) (*jose.JSONWebKey, error) {
+	if len(signatures) != 1 {
+		return nil, fmt.Errorf(`multi signature not supported`)
+	}
+
+	signature := signatures[0]
+	jwk, err := c.getStonePublicKey(signature.Header.KeyID)
+	if err != nil {
+		return nil, fmt.Errorf(`failure refreshing public keys: %w`, err)
+	}
+
+	return jwk, nil
+}
+
+func (c *Client) getStonePublicKey(id string) (*jose.JSONWebKey, error) {
 	if key := c.StonePublicKeys.Get(id); key != nil {
-		return key
+		return key, nil
 	}
 
 	if err := c.refreshPublicKeys(); err != nil {
-		c.log.WithError(err).Error(`failure refreshing stone public keys`)
-		return nil
+		return nil, fmt.Errorf(`failure refreshing stone public keys: %w`, err)
 	}
 
-	return c.StonePublicKeys.Get(id)
+	return c.StonePublicKeys.Get(id), nil
 }
 
 func (c *Client) refreshPublicKeys() error {
@@ -81,8 +110,8 @@ func (c *Client) refreshPublicKeys() error {
 		return err
 	}
 
-	for _, k := range r.Keys {
-		c.StonePublicKeys[k.KeyID] = &k
+	for i := range r.Keys {
+		c.StonePublicKeys[r.Keys[i].KeyID] = &r.Keys[i]
 	}
 
 	return nil
