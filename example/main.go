@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -14,16 +15,20 @@ func main() {
 	privKeyPath := os.Getenv("STONE_PRIVATE_KEY")
 	consentURL := os.Getenv("STONE_CONSENT_REDIRECT_URL")
 
-	client := openbank.NewClient(
+	pemPrivKey := readFileContent(privKeyPath)
+
+	client, err := openbank.NewClient(
 		openbank.WithClientID(clientID),
-		openbank.SetPrivateKey(privKeyPath),
+		openbank.WithPEMPrivateKey(pemPrivKey),
 		openbank.SetConsentURL(consentURL),
 		openbank.UseSandbox(),
 	//	openbank.EnableDebug(),
 	)
-
-	err := client.Authenticate()
 	if err != nil {
+		log.Fatal(`failed creating open bank client: `, err.Error())
+	}
+
+	if err := client.Authenticate(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -157,6 +162,11 @@ func main() {
 		//Schedule and Cancel an internal Transfer
 		ScheduleAndCancelTransfer(accounts[i].ID, client)
 	}
+}
+
+func readFileContent(path string) []byte {
+	content, _ := ioutil.ReadFile(path)
+	return content
 }
 
 func ScheduleAndCancelTransfer(accID string, client *openbank.Client) {
