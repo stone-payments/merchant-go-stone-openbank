@@ -43,6 +43,7 @@ type Client struct {
 	//Services used for comunicating with API
 	Account  *AccountService
 	Transfer *TransferService
+	PaymentInvoice *PaymentInvoiceService
 }
 
 //vhttpClient *http.Client, sandbox bool, clientID, consentRedirectURL strinxg
@@ -70,6 +71,7 @@ func NewClient(opts ...ClientOpt) *Client {
 	//Set services
 	c.Account = &AccountService{client: &c}
 	c.Transfer = &TransferService{client: &c}
+	c.PaymentInvoice = &PaymentInvoiceService{client: &c}
 
 	return &c
 }
