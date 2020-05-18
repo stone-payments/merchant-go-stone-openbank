@@ -50,6 +50,7 @@ type Client struct {
 	//Services used for comunicating with API
 	Account  *AccountService
 	Transfer *TransferService
+	PaymentInvoice *PaymentInvoiceService
 }
 
 func NewClient(opts ...ClientOpt) (*Client, error) {
@@ -82,6 +83,7 @@ func NewClient(opts ...ClientOpt) (*Client, error) {
 	//Set services
 	c.Account = &AccountService{client: &c}
 	c.Transfer = &TransferService{client: &c}
+	c.PaymentInvoice = &PaymentInvoiceService{client: &c}
 
 	return &c, nil
 }

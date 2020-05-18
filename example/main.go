@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	openbank "github.com/stone-co/go-stone-openbank"
@@ -161,6 +162,36 @@ func main() {
 
 		//Schedule and Cancel an internal Transfer
 		ScheduleAndCancelTransfer(accounts[i].ID, client)
+
+		//Payment Invoice
+		paymentInvoiceInput := types.PaymentInvoiceInput{
+			AccountID:      accounts[i].ID,
+			Amount:         5000,
+			ExpirationDate: time.Now().Format("2006-01-02"),
+			InvoiceType:    "deposit",
+		}
+
+		// Make Payment Invoice
+		paymentInvoice, _, err := client.PaymentInvoice.PaymentInvoice(paymentInvoiceInput, idempotencyKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Payment Invoice: %+v", paymentInvoice)
+
+		//List Payment Invoices
+		paymentInvoices, _, err := client.PaymentInvoice.List(accounts[i].ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Payment Invoices: %+v\n", paymentInvoices)
+		for i, t := range paymentInvoices {
+			//Get a payment invoice
+			invoice, _, err := client.PaymentInvoice.Get(t.ID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("Payment Invoice[%d]: %+v\n", i, invoice)
+		}
 	}
 }
 

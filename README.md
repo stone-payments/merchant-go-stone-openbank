@@ -57,7 +57,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Printf("Balance: %+v", balance)
-  }
+ 	}
 }
 
 func readFileContent(path string) []byte {
