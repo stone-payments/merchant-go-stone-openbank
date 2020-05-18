@@ -2,8 +2,11 @@ package openbank
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/stone-co/go-stone-openbank/types"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,9 +33,13 @@ type Client struct {
 	AccountURL *url.URL
 	ApiBaseURL *url.URL
 
+	StonePublicKeys types.StonePublicKeys
+
 	ClientID           string
 	ConsentRedirectURL string
-	PrivateKeyPath     string
+
+	privateKeyData []byte // used to build privateKey
+	privateKey     *rsa.PrivateKey
 
 	Sandbox bool
 
@@ -46,34 +53,39 @@ type Client struct {
 	PaymentInvoice *PaymentInvoiceService
 }
 
-//vhttpClient *http.Client, sandbox bool, clientID, consentRedirectURL strinxg
-func NewClient(opts ...ClientOpt) *Client {
-
+func NewClient(opts ...ClientOpt) (*Client, error) {
 	accountURL, _ := url.Parse(prodAccountURL)
 	apiURL, _ := url.Parse(prodAPIBaseURL)
+	log := logrus.New().WithFields(logrus.Fields{
+		"apiURL":     apiURL.String(),
+		"accountURL": accountURL.String(),
+	})
 
 	c := Client{
-		client:     http.DefaultClient,
-		UserAgent:  userAgent,
-		AccountURL: accountURL,
-		ApiBaseURL: apiURL,
+		client:          http.DefaultClient,
+		UserAgent:       userAgent,
+		AccountURL:      accountURL,
+		ApiBaseURL:      apiURL,
+		StonePublicKeys: make(types.StonePublicKeys),
+		log:             log,
 	}
 
 	c.ApplyOpts(opts...)
 
-	log := logrus.New().WithFields(logrus.Fields{
-		"apiURL":     c.ApiBaseURL,
-		"accountURL": c.AccountURL,
-	})
-
-	c.log = log
+	if len(c.privateKeyData) > 0 {
+		privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(c.privateKeyData)
+		if err != nil {
+			return nil, err
+		}
+		c.privateKey = privateKey
+	}
 
 	//Set services
 	c.Account = &AccountService{client: &c}
 	c.Transfer = &TransferService{client: &c}
 	c.PaymentInvoice = &PaymentInvoiceService{client: &c}
 
-	return &c
+	return &c, nil
 }
 
 type ClientOpt func(*Client)
@@ -84,9 +96,9 @@ func WithClientID(key string) ClientOpt {
 	}
 }
 
-func SetPrivateKey(path string) ClientOpt {
+func WithPEMPrivateKey(pk []byte) ClientOpt {
 	return func(c *Client) {
-		c.PrivateKeyPath = path
+		c.privateKeyData = pk
 	}
 }
 
