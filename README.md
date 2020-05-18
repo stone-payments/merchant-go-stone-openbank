@@ -28,7 +28,7 @@ func main() {
 	client, err := openbank.NewClient(
 		openbank.WithClientID(clientID),
 		openbank.SetConsentURL(consentURL),
-		openbank.WithPEMPrivateKey(pemPrivKey),		openbank.SetConsentURL(consentURL),
+		openbank.WithPEMPrivateKey(pemPrivKey),
 		openbank.UseSandbox(),
 	//	openbank.EnableDebug(),
 	)
