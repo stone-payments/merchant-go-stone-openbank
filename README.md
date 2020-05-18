@@ -23,13 +23,18 @@ func main() {
 	privKeyPath := os.Getenv("STONE_PRIVATE_KEY")
 	consentURL := os.Getenv("STONE_CONSENT_REDIRECT_URL")
 
-	client := openbank.NewClient(
+	pemPrivKey := readFileContent(privKeyPath)
+
+	client, err := openbank.NewClient(
 		openbank.WithClientID(clientID),
-		openbank.SetPrivateKey(privKeyPath),
 		openbank.SetConsentURL(consentURL),
+		openbank.WithPEMPrivateKey(pemPrivKey),		openbank.SetConsentURL(consentURL),
 		openbank.UseSandbox(),
 	//	openbank.EnableDebug(),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	err := client.Authenticate()
 	if err != nil {
@@ -53,6 +58,11 @@ func main() {
 		}
 		fmt.Printf("Balance: %+v", balance)
   }
+}
+
+func readFileContent(path string) []byte {
+	content, _ := ioutil.ReadFile(path)
+	return content
 }
 ```
 
