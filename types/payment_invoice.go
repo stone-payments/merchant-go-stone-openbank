@@ -24,11 +24,11 @@ func onlyDigits(key string) string {
 }
 
 type PaymentInvoiceInput struct {
-	AccountID      string                 `json:"account_id"`
-	Amount         int                    `json:"amount"`
-	ExpirationDate string                 `json:"expiration_date"`
-	LimitDate      string                 `json:"limit_date,omitempty"`
-	InvoiceType    string                 `json:"invoice_type"`
+	AccountID      string                   `json:"account_id"`
+	Amount         int                      `json:"amount"`
+	ExpirationDate string                   `json:"expiration_date"`
+	LimitDate      string                   `json:"limit_date,omitempty"`
+	InvoiceType    string                   `json:"invoice_type"`
 	Payer          PaymentInvoicePayerInput `json:"payer,omitempty" `
 }
 
@@ -38,7 +38,7 @@ type PaymentInvoicePayerInput struct {
 	TradeName string `json:"trade_name,omitempty"`
 }
 
-func (p *PaymentInvoiceInput) Ok() error {
+func (p *PaymentInvoiceInput) Validate() error {
 	if strings.TrimSpace(p.AccountID) == "" {
 		return errors.New("account_id can't be empty")
 	}
@@ -48,7 +48,7 @@ func (p *PaymentInvoiceInput) Ok() error {
 	}
 
 	_, err := time.Parse("2006-01-02", p.ExpirationDate)
-	if err != nil || time.Now().Format("2006-01-02") < p.ExpirationDate {
+	if err != nil || time.Now().Format("2006-01-02") > p.ExpirationDate {
 		return errors.New("invalid expiration_date")
 	}
 
@@ -83,21 +83,21 @@ func (p *PaymentInvoiceInput) Ok() error {
 }
 
 type PaymentInvoice struct {
-	ID             string                  `json:"id"`
-	AccountID      string                  `json:"account_id"`
-	CreatedBy      string                  `json:"created_by"`
-	CreatedAt      string                  `json:"created_at"`
-	RegisteredAt   string                  `json:"registered_at"`
-	SettledAt      string                  `json:"settled_at"`
-	Amount         int                     `json:"amount"`
-	Barcode        string                  `json:"barcode"`
-	WritableLine   string                  `json:"writable_line"`
-	ExpirationDate string                  `json:"expiration_date"`
-	InvoiceType    string                  `json:"invoice_type"`
-	IssuanceDate   string                  `json:"issuance_date"`
-	LimitDate      string                  `json:"limit_date"`
-	Status         string                  `json:"status"`
-	OurNumber      string                  `json:"our_number"`
+	ID             string                    `json:"id"`
+	AccountID      string                    `json:"account_id"`
+	CreatedBy      string                    `json:"created_by"`
+	CreatedAt      string                    `json:"created_at"`
+	RegisteredAt   string                    `json:"registered_at"`
+	SettledAt      string                    `json:"settled_at"`
+	Amount         int                       `json:"amount"`
+	Barcode        string                    `json:"barcode"`
+	WritableLine   string                    `json:"writable_line"`
+	ExpirationDate string                    `json:"expiration_date"`
+	InvoiceType    string                    `json:"invoice_type"`
+	IssuanceDate   string                    `json:"issuance_date"`
+	LimitDate      string                    `json:"limit_date"`
+	Status         string                    `json:"status"`
+	OurNumber      string                    `json:"our_number"`
 	Beneficiary    PaymentInvoiceBeneficiary `json:"beneficiary"`
 	Payer          PaymentInvoicePayer       `json:"payer"`
 }

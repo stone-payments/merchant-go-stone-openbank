@@ -19,7 +19,7 @@ type PaymentInvoiceService struct {
 // PaymentInvoice make a bar code payment invoice
 func (s *PaymentInvoiceService) PaymentInvoice(input types.PaymentInvoiceInput, idempotencyKey string) (*types.PaymentInvoice, *Response, error) {
 	path := "/api/v1/barcode_payment_invoices"
-	if err := input.Ok(); err != nil {
+	if err := input.Validate(); err != nil {
 		return nil, nil, err
 	}
 
