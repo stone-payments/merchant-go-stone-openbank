@@ -77,6 +77,11 @@ func NewClient(opts ...ClientOpt) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		if privateKey == nil {
+			return nil, fmt.Errorf("invalid private key")
+		}
+
 		c.privateKey = privateKey
 	}
 
