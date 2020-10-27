@@ -5,15 +5,16 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/stone-co/go-stone-openbank/types"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/sirupsen/logrus"
+
+	"github.com/stone-co/go-stone-openbank/types"
 )
 
 const (
@@ -48,8 +49,8 @@ type Client struct {
 	Token string
 
 	//Services used for comunicating with API
-	Account  *AccountService
-	Transfer *TransferService
+	Account        *AccountService
+	Transfer       *TransferService
 	PaymentInvoice *PaymentInvoiceService
 }
 
@@ -161,15 +162,25 @@ type ErrorResponse struct {
 
 	// RequestID returned from the API, useful to contact support.
 	RequestID string `json:"request_id"`
+
+	TransferError TransferError `json:"transfer_error"`
+}
+
+type TransferError struct {
+	Type             string `json:"type,omitempty"`
+	ValidationErrors []struct {
+		Error string   `json:"error,omitempty"`
+		Path  []string `json:"path,omitempty"`
+	} `json:"validation_errors,omitempty"`
 }
 
 func (r *ErrorResponse) Error() string {
 	if r.RequestID != "" {
-		return fmt.Sprintf("%v %v: %d (request %q) %v",
-			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.Message)
+		return fmt.Sprintf("%v %v: %d (request %q) %v %v",
+			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.TransferError, r.Message)
 	}
-	return fmt.Sprintf("%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
+	return fmt.Sprintf("%v %v: %d %v %v",
+		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.TransferError, r.Message)
 }
 
 func CheckResponse(r *http.Response) error {
@@ -180,7 +191,7 @@ func CheckResponse(r *http.Response) error {
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
-		err := json.Unmarshal(data, errorResponse)
+		err := json.Unmarshal(data, &errorResponse.TransferError)
 		if err != nil {
 			errorResponse.Message = string(data)
 		}
