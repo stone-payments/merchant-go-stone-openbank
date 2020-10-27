@@ -172,6 +172,10 @@ type TransferError struct {
 		Error string   `json:"error,omitempty"`
 		Path  []string `json:"path,omitempty"`
 	} `json:"validation_errors,omitempty"`
+	Reason []struct {
+		Error string   `json:"error,omitempty"`
+		Path  []string `json:"path,omitempty"`
+	} `json:"reason,omitempty"`
 }
 
 func (r *ErrorResponse) Error() string {
