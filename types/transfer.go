@@ -45,6 +45,7 @@ type Target struct {
 
 type TransferAccount struct {
 	AccountCode           string `json:"account_code,omitempty"`
+	AccountType           string `json:"account_type,omitempty"`
 	BranchCode            string `json:"branch_code,omitempty"`
 	InstitutionISPB       string `json:"institution_ispb"`
 	InstitutionCode       string `json:"institution_code"`
