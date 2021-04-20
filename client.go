@@ -114,6 +114,26 @@ func SetConsentURL(url string) ClientOpt {
 	}
 }
 
+func SetBaseURL(newBaseUrl string) (ClientOpt, error) {
+	apiBaseURL, err := url.Parse(newBaseUrl)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base url: %w", err)
+	}
+	return func(c *Client) {
+		c.ApiBaseURL = apiBaseURL
+	}, nil
+}
+
+func SetAccountURL(newAccountUrl string) (ClientOpt, error) {
+	accountURL, err := url.Parse(newAccountUrl)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account url: %w", err)
+	}
+	return func(c *Client) {
+		c.AccountURL = accountURL
+	}, nil
+}
+
 func WithHttpClient(hc http.Client) ClientOpt {
 	return func(c *Client) {
 		c.client = &hc
