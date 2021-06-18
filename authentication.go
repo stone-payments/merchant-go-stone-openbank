@@ -51,8 +51,8 @@ func (c *Client) Authenticate() error {
 	ts := config.TokenSource(ctx, &token)
 
 	c.m.Lock()
+	defer c.m.Unlock()
 	c.client = oauth2.NewClient(ctx, ts)
-	c.m.Unlock()
 	c.token = token
 
 	return nil
