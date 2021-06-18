@@ -10,9 +10,11 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 
 	"github.com/stone-co/go-stone-openbank/types"
 )
@@ -29,6 +31,7 @@ const (
 type Client struct {
 	client *http.Client
 	log    *logrus.Entry
+	m      *sync.Mutex
 	debug  bool
 
 	AccountURL *url.URL
@@ -46,7 +49,7 @@ type Client struct {
 
 	UserAgent string
 
-	Token string
+	token oauth2.Token
 
 	//Services used for comunicating with API
 	Account        *AccountService
@@ -69,6 +72,7 @@ func NewClient(opts ...ClientOpt) (*Client, error) {
 		ApiBaseURL:      apiURL,
 		StonePublicKeys: make(types.StonePublicKeys),
 		log:             log,
+		m:               &sync.Mutex{},
 	}
 
 	c.ApplyOpts(opts...)
