@@ -13,6 +13,10 @@ import (
 )
 
 func (c *Client) Authenticate() error {
+	if c.token.Valid() {
+		return nil
+	}
+
 	claims := c.authClaims()
 	tokenString, err := c.generateToken(claims)
 	if err != nil {
@@ -38,7 +42,6 @@ func (c *Client) Authenticate() error {
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	var token oauth2.Token
-
 	_, err = c.Do(req, &token)
 	if err != nil {
 		return err
@@ -47,7 +50,10 @@ func (c *Client) Authenticate() error {
 	config := &oauth2.Config{}
 	ts := config.TokenSource(ctx, &token)
 
+	c.m.Lock()
+	defer c.m.Unlock()
 	c.client = oauth2.NewClient(ctx, ts)
+	c.token = token
 
 	return nil
 }
