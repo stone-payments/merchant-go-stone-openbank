@@ -2,6 +2,9 @@ package openbank
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,7 +16,7 @@ import (
 )
 
 func (c *Client) Authenticate() error {
-	if c.token.Valid() {
+	if c.validToken() {
 		return nil
 	}
 
@@ -72,4 +75,44 @@ func (c *Client) authClaims() jwt.MapClaims {
 		"sub":       c.ClientID,
 	}
 	return claims
+}
+
+func (c *Client) validToken() bool {
+	if !c.token.Valid() {
+		return false
+	}
+
+	src := strings.Split(c.token.AccessToken, ".")
+	if len(src) != 3 {
+		return false
+	}
+
+	if l := len(src[1]) % 4; l > 0 {
+		src[1] += strings.Repeat("=", 4-l)
+	}
+
+	decoded, err := base64.URLEncoding.DecodeString(src[1])
+	if err != nil {
+		c.log.Error(fmt.Errorf("decoding base64 error %s", err))
+		return false
+	}
+
+	var output tokenData
+	err = json.Unmarshal(decoded, &output)
+	if err != nil {
+		c.log.Error(fmt.Errorf("decoding json error %s", err))
+		return false
+	}
+
+	tm := time.Unix(int64(output.Exp), 0)
+	remainder := tm.Sub(time.Now())
+	if remainder < 30 {
+		return false
+	}
+
+	return true
+}
+
+type tokenData struct {
+	Exp int `json:"exp"`
 }
