@@ -41,3 +41,21 @@ func (s *PaymentLinkService) Get(accountID, orderID string) (types.PaymentLink, 
 
 	return paymentLink, resp, nil
 }
+
+func (s *PaymentLinkService) Create(input types.PaymentLinkInput) (types.PaymentLink, *Response, error) {
+	path := "/api/v1/payment_links/orders"
+
+	req, err := s.client.NewAPIRequest(http.MethodPost, path, input)
+	if err != nil {
+		return types.PaymentLink{}, nil, err
+	}
+
+	var paymentLink types.PaymentLink
+
+	resp, err := s.client.Do(req, &paymentLink)
+	if err != nil {
+		return types.PaymentLink{}, resp, err
+	}
+
+	return paymentLink, resp, nil
+}

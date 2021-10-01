@@ -75,3 +75,43 @@ type PaymentLinkItem struct {
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
 }
+
+type PaymentLinkInput struct {
+	AccountID string                    `json:"account_id"`
+	Items     []PaymentLinkItemInput    `json:"items"`
+	Customer  PaymentLinkCustomerInput  `json:"customer"`
+	Closed    bool                      `json:"closed"`
+	Payments  []PaymentLinkPaymentInput `json:"payments"`
+}
+
+type PaymentLinkItemInput struct {
+	Amount      int    `json:"amount"`
+	Description string `json:"description"`
+	Quantity    int    `json:"quantity"`
+}
+
+type PaymentLinkCustomerInput struct {
+	Name string `json:"name"`
+}
+
+type PaymentLinkPaymentInput struct {
+	Amount        int                      `json:"amount"`
+	PaymentMethod string                   `json:"payment_method"`
+	Checkout      PaymentLinkCheckoutInput `json:"checkout"`
+}
+
+type PaymentLinkCheckoutInput struct {
+	ExpiresIn                   string                     `json:"expires_in"`
+	SkipCheckoutSuccessPage     bool                       `json:"skip_checkout_success_page"`
+	BillingAddressEditable      bool                       `json:"billing_address_editable"`
+	CustomerEditable            bool                       `json:"customer_editable"`
+	AcceptedPaymentMethods      []string                   `json:"accepted_payment_methods"`
+	AcceptedMultiPaymentMethods []string                   `json:"accepted_multi_payment_methods"`
+	SuccessURL                  string                     `json:"success_url"`
+	CreditCard                  PaymentLinkCreditCardInput `json:"credit_card"`
+}
+
+type PaymentLinkCreditCardInput struct {
+	Capture      bool                               `json:"capture"`
+	Installments []PaymentLinkCreditCardInstallment `json:"installments"`
+}
