@@ -59,3 +59,31 @@ func (s *PaymentLinkService) Create(input types.PaymentLinkInput) (types.Payment
 
 	return paymentLink, resp, nil
 }
+
+func (s *PaymentLinkService) Cancel(orderID string, input types.PaymentLinkCancelInput) (types.PaymentLink, *Response, error) {
+	orderID = strings.TrimSpace(orderID)
+
+	if orderID == "" {
+		return types.PaymentLink{}, nil, errors.New("account_id can't be empty")
+	}
+
+	if err := input.Validate(); err != nil {
+		return types.PaymentLink{}, nil, err
+	}
+
+	path := fmt.Sprintf("/api/v1/payment_links/orders/%s/closed", orderID)
+
+	req, err := s.client.NewAPIRequest(http.MethodPatch, path, input)
+	if err != nil {
+		return types.PaymentLink{}, nil, err
+	}
+
+	var paymentLink types.PaymentLink
+
+	resp, err := s.client.Do(req, &paymentLink)
+	if err != nil {
+		return types.PaymentLink{}, resp, err
+	}
+
+	return paymentLink, resp, nil
+}

@@ -1,6 +1,9 @@
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
 
 type PaymentLink struct {
 	ID        string                `json:"id"`
@@ -114,4 +117,21 @@ type PaymentLinkCheckoutInput struct {
 type PaymentLinkCreditCardInput struct {
 	Capture      bool                               `json:"capture"`
 	Installments []PaymentLinkCreditCardInstallment `json:"installments"`
+}
+
+type PaymentLinkCancelInput struct {
+	AccountID string `json:"account_id"`
+	Status    string `json:"status"`
+}
+
+func (p PaymentLinkCancelInput) Validate() error {
+	if p.AccountID == "" {
+		return errors.New("account_id can't be empty")
+	}
+
+	if p.Status != "canceled" {
+		return errors.New("status must be equal to canceled")
+	}
+
+	return nil
 }
