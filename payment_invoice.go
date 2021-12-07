@@ -9,8 +9,6 @@ import (
 	"github.com/stone-co/go-stone-openbank/types"
 )
 
-const idempotencyKeyMaxSize = 72
-
 // PaymentInvoiceService handlers communication with Stone Openbank API
 type PaymentInvoiceService struct {
 	client *Client
@@ -28,11 +26,9 @@ func (s *PaymentInvoiceService) PaymentInvoice(input types.PaymentInvoiceInput, 
 		return nil, nil, err
 	}
 
-	if idempotencyKey != "" {
-		if len(idempotencyKey) > idempotencyKeyMaxSize {
-			return nil, nil, errors.New("invalid idempotency key")
-		}
-		req.Header.Add("x-stone-idempotency-key", idempotencyKey)
+	err = s.client.AddIdempotencyHeader(req, idempotencyKey)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	var paymentInvoice types.PaymentInvoice

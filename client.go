@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,12 +21,13 @@ import (
 )
 
 const (
-	libraryVersion    = "1.0"
-	prodAccountURL    = "https://accounts.openbank.stone.com.br"
-	sandboxAccountURL = "https://sandbox-accounts.openbank.stone.com.br"
-	prodAPIBaseURL    = "https://api.openbank.stone.com.br"
-	sandboxAPIBaseURL = "https://sandbox-api.openbank.stone.com.br"
-	userAgent         = "go-stone-openbank/" + libraryVersion
+	libraryVersion        = "1.0"
+	prodAccountURL        = "https://accounts.openbank.stone.com.br"
+	sandboxAccountURL     = "https://sandbox-accounts.openbank.stone.com.br"
+	prodAPIBaseURL        = "https://api.openbank.stone.com.br"
+	sandboxAPIBaseURL     = "https://sandbox-api.openbank.stone.com.br"
+	userAgent             = "go-stone-openbank/" + libraryVersion
+	idempotencyKeyMaxSize = 72
 )
 
 type Client struct {
@@ -260,7 +262,20 @@ func (c *Client) NewAPIRequest(method, pathStr string, body interface{}) (*http.
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("User-Agent", c.UserAgent)
+
 	return req, nil
+}
+
+//AddIdempotencyHeader add in request the header used to realize idempotent operations
+func (c *Client) AddIdempotencyHeader(req *http.Request, idempotencyKey string) error {
+	if idempotencyKey != "" {
+		if len(idempotencyKey) > idempotencyKeyMaxSize {
+			return errors.New("invalid idempotency key")
+		}
+		req.Header.Add("x-stone-idempotency-key", idempotencyKey)
+	}
+
+	return nil
 }
 
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {

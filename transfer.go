@@ -66,8 +66,9 @@ func (s *TransferService) transfer(input types.TransferInput, idempotencyKey, pa
 		return nil, nil, err
 	}
 
-	if idempotencyKey != "" {
-		req.Header.Add("x-stone-idempotency-key", idempotencyKey)
+	err = s.client.AddIdempotencyHeader(req, idempotencyKey)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	var transfer types.Transfer
