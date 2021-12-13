@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -268,11 +269,22 @@ func (c *Client) NewAPIRequest(method, pathStr string, body interface{}) (*http.
 
 //AddIdempotencyHeader add in request the header used to realize idempotent operations
 func (c *Client) AddIdempotencyHeader(req *http.Request, idempotencyKey string) error {
-	if idempotencyKey != "" {
-		if len(idempotencyKey) > idempotencyKeyMaxSize {
+	trimmedIdempotencyKey := strings.TrimSpace(idempotencyKey)
+	if trimmedIdempotencyKey != "" {
+		if len(trimmedIdempotencyKey) > idempotencyKeyMaxSize {
 			return errors.New("invalid idempotency key")
 		}
-		req.Header.Add("x-stone-idempotency-key", idempotencyKey)
+		req.Header.Add("x-stone-idempotency-key", trimmedIdempotencyKey)
+	}
+
+	return nil
+}
+
+//AddAccountIdHeader add in request the header used in some pix operations and maybe others
+func (c *Client) AddAccountIdHeader(req *http.Request, accountId string) error {
+	trimmedAccountId := strings.TrimSpace(accountId)
+	if trimmedAccountId != "" {
+		req.Header.Add("x-stone-account-id", trimmedAccountId)
 	}
 
 	return nil
