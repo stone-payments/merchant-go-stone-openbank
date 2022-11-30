@@ -22,7 +22,7 @@ func (s *PixService) GetOutboundPix(id string) (*types.PIXOutBoundOutput, *Respo
 	}
 
 	var pix types.PIXOutBoundOutput
-	resp, err := s.client.Do(req, &pix)
+	resp, err := s.client.Do(req, &pix, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -40,7 +40,7 @@ func (s *PixService) GetQRCodeData(input types.GetQRCodeInput) (*types.QRCode, *
 	}
 
 	var qrcode types.QRCode
-	resp, err := s.client.Do(req, &qrcode)
+	resp, err := s.client.Do(req, &qrcode, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -67,7 +67,7 @@ func (s *PixService) ListDynamicQRCodes(accountID string) ([]types.QRCodeDynamic
 		Data   []types.QRCodeDynamic `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -94,7 +94,7 @@ func (s *PixService) CreateDynamicQRCode(input types.CreateDynamicQRCodeInput, i
 	}
 
 	var pixInvoiceOutput types.PIXInvoiceOutput
-	resp, err := s.client.Do(req, &pixInvoiceOutput)
+	resp, err := s.client.Do(req, &pixInvoiceOutput, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -117,7 +117,7 @@ func (s *PixService) CreatePedingPayment(input types.CreatePedingPaymentInput, i
 	}
 
 	var pendingPaymentOutput types.PendingPaymentOutput
-	resp, err := s.client.Do(req, &pendingPaymentOutput)
+	resp, err := s.client.Do(req, &pendingPaymentOutput, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -139,7 +139,7 @@ func (s *PixService) ConfirmPedingPayment(input types.ConfirmPendingPaymentInput
 		return nil, err
 	}
 
-	resp, err := s.client.Do(req, nil)
+	resp, err := s.client.Do(req, nil, nil)
 	if err != nil {
 		return resp, err
 	}

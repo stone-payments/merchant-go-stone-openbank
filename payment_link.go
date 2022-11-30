@@ -34,7 +34,7 @@ func (s *PaymentLinkService) Get(accountID, orderID string) (types.PaymentLink, 
 
 	var paymentLink types.PaymentLink
 
-	resp, err := s.client.Do(req, &paymentLink)
+	resp, err := s.client.Do(req, &paymentLink, nil)
 	if err != nil {
 		return types.PaymentLink{}, resp, err
 	}
@@ -52,7 +52,7 @@ func (s *PaymentLinkService) Create(input types.PaymentLinkInput) (types.Payment
 
 	var paymentLink types.PaymentLink
 
-	resp, err := s.client.Do(req, &paymentLink)
+	resp, err := s.client.Do(req, &paymentLink, nil)
 	if err != nil {
 		return types.PaymentLink{}, resp, err
 	}
@@ -80,7 +80,7 @@ func (s *PaymentLinkService) Cancel(orderID string, input types.PaymentLinkCance
 
 	var paymentLink types.PaymentLink
 
-	resp, err := s.client.Do(req, &paymentLink)
+	resp, err := s.client.Do(req, &paymentLink, nil)
 	if err != nil {
 		return types.PaymentLink{}, resp, err
 	}

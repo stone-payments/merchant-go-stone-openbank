@@ -1,6 +1,9 @@
 package openbank
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -118,5 +121,64 @@ func TestNewAPIRequest(t *testing.T) {
 	userAgent := req.Header.Get("User-Agent")
 	if c.UserAgent != userAgent {
 		t.Errorf("NewAPIRequest() User-Agent = %v, expected %v", userAgent, c.UserAgent)
+	}
+}
+
+func TestCheckResponse(t *testing.T) {
+	testCases := []struct {
+		Name            string
+		ResponseBody    types.Product
+		StatusCode      int
+		ExpectedSuccess bool
+		ErrorResponse   *types.Product
+	}{
+		{
+			Name: "CheckResponse should return false for unsuccessful status code",
+			ResponseBody: types.Product{
+				Value: 10,
+				Name:  "test-name",
+			},
+			StatusCode:      400,
+			ExpectedSuccess: false,
+			ErrorResponse:   new(types.Product),
+		},
+		{
+			Name: "CheckResponse should return true for successful status code",
+			ResponseBody: types.Product{
+				Value: 10,
+				Name:  "test-name",
+			},
+			StatusCode:      200,
+			ExpectedSuccess: true,
+			ErrorResponse:   new(types.Product),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// Arrange
+			jsonBody, _ := json.Marshal(testCase.ResponseBody)
+
+			response := &http.Response{
+				StatusCode: testCase.StatusCode,
+				Body:       io.NopCloser(bytes.NewReader(jsonBody)),
+			}
+
+			// Act
+			success, err := CheckResponse(response, testCase.ErrorResponse)
+
+			// Asserts
+			if err != nil {
+				t.Fatalf("error checking response: %v", err)
+			}
+
+			if success != testCase.ExpectedSuccess {
+				t.Errorf("expected success: %v, got %v", testCase.ExpectedSuccess, success)
+			}
+
+			if !success && !testCase.ExpectedSuccess && !reflect.DeepEqual(testCase.ErrorResponse, &testCase.ResponseBody) {
+				t.Errorf("expected error response: %v, got %v", testCase.ResponseBody, testCase.ErrorResponse)
+			}
+		})
 	}
 }

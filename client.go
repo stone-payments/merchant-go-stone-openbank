@@ -235,21 +235,37 @@ func (r *ErrorResponse) Error() string {
 		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.TransferError, r.Message)
 }
 
-func CheckResponse(r *http.Response) error {
+func CheckResponse(r *http.Response, responseBody interface{}) (bool, error) {
 	if c := r.StatusCode; c >= 200 && c <= 299 {
-		return nil
+		return true, nil
 	}
 
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
+		if responseBody != nil {
+			if w, ok := responseBody.(io.Writer); ok {
+				_, err = io.Copy(w, r.Body)
+				if err != nil {
+					return false, err
+				}
+			} else {
+				err = json.Unmarshal(data, responseBody)
+				if err != nil {
+					return false, err
+				}
+
+				return false, nil
+			}
+		}
+
 		err := json.Unmarshal(data, &errorResponse.TransferError)
 		if err != nil {
 			errorResponse.Message = string(data)
 		}
 	}
 
-	return errorResponse
+	return false, errorResponse
 }
 
 // NewAPIRequest creates an API request. A relative URL PATH can be provided in pathStr, which will be resolved to the
@@ -303,7 +319,7 @@ func (c *Client) AddAccountIdHeader(req *http.Request, accountId string) error {
 	return nil
 }
 
-func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
+func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{}) (*Response, error) {
 	if c.debug {
 		d, _ := httputil.DumpRequestOut(req, true)
 		c.log.Infof(">>> REQUEST:\n%s", string(d))
@@ -326,19 +342,19 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 
 	response := &Response{Response: resp}
 
-	err = CheckResponse(resp)
+	ok, err := CheckResponse(resp, errorResponse)
 	if err != nil {
 		return response, err
 	}
 
-	if v != nil {
-		if w, ok := v.(io.Writer); ok {
+	if ok && successResponse != nil {
+		if w, ok := successResponse.(io.Writer); ok {
 			_, err = io.Copy(w, resp.Body)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			err = json.NewDecoder(resp.Body).Decode(v)
+			err = json.NewDecoder(resp.Body).Decode(successResponse)
 			if err != nil {
 				return nil, err
 			}

@@ -24,7 +24,7 @@ func (s *PixService) ListEntries(accountID string) ([]types.PixEntry, *Response,
 		Data   []types.PixEntry `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -68,7 +68,7 @@ func (s *PixService) CreateEntry(input types.CreatePixEntryInput, idempotencyKey
 		req.Header.Add("x-stone-verification-code", input.VerificationCode)
 	}
 
-	resp, err := s.client.Do(req, &output)
+	resp, err := s.client.Do(req, &output, nil)
 	if err != nil {
 		return output, resp, err
 	}

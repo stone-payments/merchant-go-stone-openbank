@@ -72,7 +72,7 @@ func (s *TransferService) transfer(input types.TransferInput, idempotencyKey, pa
 	}
 
 	var transfer types.Transfer
-	resp, err := s.client.Do(req, &transfer)
+	resp, err := s.client.Do(req, &transfer, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -103,7 +103,7 @@ func (s *TransferService) list(path string) ([]types.Transfer, *Response, error)
 		Data   []types.Transfer `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -130,7 +130,7 @@ func (s *TransferService) get(path string) (*types.Transfer, *Response, error) {
 	}
 
 	var transfer types.Transfer
-	resp, err := s.client.Do(req, &transfer)
+	resp, err := s.client.Do(req, &transfer, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -156,7 +156,7 @@ func (s *TransferService) cancel(path string) (*Response, error) {
 		return nil, err
 	}
 
-	resp, err := s.client.Do(req, nil)
+	resp, err := s.client.Do(req, nil, nil)
 	if err != nil {
 		return resp, err
 	}

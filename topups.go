@@ -22,7 +22,7 @@ func (s *TopupsService) ListGameProviders() (*types.Providers, *Response, error)
 	}
 
 	var providers types.Providers
-	resp, err := s.client.Do(req, &providers)
+	resp, err := s.client.Do(req, &providers, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -40,7 +40,7 @@ func (s *TopupsService) GetValuesFromGameProvider(id int) (*types.Products, *Res
 	}
 
 	var products types.Products
-	resp, err := s.client.Do(req, &products)
+	resp, err := s.client.Do(req, &products, nil)
 	if err != nil {
 		return nil, resp, err
 	}

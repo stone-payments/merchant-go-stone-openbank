@@ -30,7 +30,7 @@ func (s InstitutionService) Get(context string) (*types.Institution, *Response, 
 	}
 
 	var institution types.Institution
-	resp, err := s.client.Do(req, &institution)
+	resp, err := s.client.Do(req, &institution, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -49,7 +49,7 @@ func (s InstitutionService) List(context InstitutionContext) ([]types.Institutio
 	}
 
 	var institution []types.Institution
-	resp, err := s.client.Do(req, &institution)
+	resp, err := s.client.Do(req, &institution, nil)
 	if err != nil {
 		return nil, resp, err
 	}

@@ -32,7 +32,7 @@ func (s *PaymentInvoiceService) PaymentInvoice(input types.PaymentInvoiceInput, 
 	}
 
 	var paymentInvoice types.PaymentInvoice
-	resp, err := s.client.Do(req, &paymentInvoice)
+	resp, err := s.client.Do(req, &paymentInvoice, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -57,7 +57,7 @@ func (s *PaymentInvoiceService) List(accountID string) ([]types.PaymentInvoice, 
 		Data   []types.PaymentInvoice `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -78,7 +78,7 @@ func (s *PaymentInvoiceService) Get(paymentInvoiceID string) (types.PaymentInvoi
 		return paymentInvoice, nil, err
 	}
 
-	resp, err := s.client.Do(req, &paymentInvoice)
+	resp, err := s.client.Do(req, &paymentInvoice, nil)
 	if err != nil {
 		return paymentInvoice, resp, err
 	}
@@ -99,7 +99,7 @@ func (s *PaymentInvoiceService) Cancel(paymentInvoiceID string) (*Response, erro
 		return nil, err
 	}
 
-	resp, err := s.client.Do(req, nil)
+	resp, err := s.client.Do(req, nil, nil)
 	if err != nil {
 		return resp, err
 	}

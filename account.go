@@ -26,7 +26,7 @@ func (s *AccountService) Get(id string) (*types.Account, *Response, error) {
 	}
 
 	var account types.Account
-	resp, err := s.client.Do(req, &account)
+	resp, err := s.client.Do(req, &account, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -49,7 +49,7 @@ func (s *AccountService) List() ([]types.Account, *Response, error) {
 		Data   []types.Account `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -68,7 +68,7 @@ func (s *AccountService) GetBalance(id string) (*types.Balance, *Response, error
 	}
 
 	var balance types.Balance
-	resp, err := s.client.Do(req, &balance)
+	resp, err := s.client.Do(req, &balance, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -91,7 +91,7 @@ func (s *AccountService) GetStatement(id string) ([]types.Statement, *Response, 
 		Data   []types.Statement `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -110,7 +110,7 @@ func (s *AccountService) GetStatementEntry(id string) (*types.Statement, *Respon
 	}
 
 	var statement types.Statement
-	resp, err := s.client.Do(req, &statement)
+	resp, err := s.client.Do(req, &statement, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -132,7 +132,7 @@ func (s *AccountService) GetFees(accountID string, feeType string) (*types.Fee, 
 	}
 
 	var fee types.Fee
-	resp, err := s.client.Do(req, &fee)
+	resp, err := s.client.Do(req, &fee, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -154,7 +154,7 @@ func (s *AccountService) ListFees(accountID string) ([]types.Fee, *Response, err
 		Data   []types.Fee  `json:"data"`
 	}
 
-	resp, err := s.client.Do(req, &dataResp)
+	resp, err := s.client.Do(req, &dataResp, nil)
 	if err != nil {
 		return nil, resp, err
 	}
