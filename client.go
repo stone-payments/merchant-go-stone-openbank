@@ -56,15 +56,6 @@ type Client struct {
 	UserAgent string
 
 	token oauth2.Token
-
-	//Services used for comunicating with API
-	Institution    *InstitutionService
-	Account        *AccountService
-	Transfer       *TransferService
-	PaymentInvoice *PaymentInvoiceService
-	Pix            *PixService
-	PaymentLink    *PaymentLinkService
-	Topups         *TopupsService
 }
 
 func NewClient(opts ...ClientOpt) (*Client, error) {
@@ -96,15 +87,6 @@ func NewClient(opts ...ClientOpt) (*Client, error) {
 
 		c.privateKey = privateKey
 	}
-
-	//Set services
-	c.Account = &AccountService{client: &c}
-	c.Institution = &InstitutionService{client: &c}
-	c.PaymentLink = &PaymentLinkService{client: &c}
-	c.PaymentInvoice = &PaymentInvoiceService{client: &c}
-	c.Pix = &PixService{client: &c}
-	c.Topups = &TopupsService{client: &c}
-	c.Transfer = &TransferService{client: &c}
 
 	// Set log
 	log := logrus.New().WithFields(logrus.Fields{
@@ -211,7 +193,7 @@ type ErrorResponse struct {
 	// RequestID returned from the API, useful to contact support.
 	RequestID string `json:"request_id"`
 
-	TransferError TransferError `json:"transfer_error"`
+	TransferError interface{} `json:"transfer_error"`
 }
 
 type TransferError struct {
@@ -228,44 +210,51 @@ type TransferError struct {
 
 func (r *ErrorResponse) Error() string {
 	if r.RequestID != "" {
-		return fmt.Sprintf("%v %v: %d (request %q) %v %v",
+		return fmt.Sprintf("%v %v: %d (request %q) %+v %v",
 			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.TransferError, r.Message)
 	}
-	return fmt.Sprintf("%v %v: %d %v %v",
+	return fmt.Sprintf("%v %v: %d %+v %v",
 		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.TransferError, r.Message)
 }
 
-func CheckResponse(r *http.Response, responseBody interface{}) (bool, error) {
+func parseBody(data []byte, body interface{}) error {
+	if len(data) > 0 {
+		if body != nil {
+			if w, ok := body.(io.Writer); ok {
+				_, err := io.Copy(w, bytes.NewReader(data))
+				if err != nil {
+					return err
+				}
+			} else {
+				err := json.Unmarshal(data, body)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
+func CheckResponse(r *http.Response, errorBody interface{}) error {
 	if c := r.StatusCode; c >= 200 && c <= 299 {
-		return true, nil
+		return nil
 	}
 
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
-		if responseBody != nil {
-			if w, ok := responseBody.(io.Writer); ok {
-				_, err = io.Copy(w, r.Body)
-				if err != nil {
-					return false, err
-				}
-			} else {
-				err = json.Unmarshal(data, responseBody)
-				if err != nil {
-					return false, err
-				}
-
-				return false, nil
+		if errorBody != nil {
+			err := json.Unmarshal(data, errorBody)
+			if err != nil {
+				errorResponse.Message = string(data)
 			}
 		}
-
-		err := json.Unmarshal(data, &errorResponse.TransferError)
-		if err != nil {
-			errorResponse.Message = string(data)
-		}
+		errorResponse.TransferError = errorBody
 	}
 
-	return false, errorResponse
+	return errorResponse
 }
 
 // NewAPIRequest creates an API request. A relative URL PATH can be provided in pathStr, which will be resolved to the
@@ -342,22 +331,16 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 
 	response := &Response{Response: resp}
 
-	ok, err := CheckResponse(resp, errorResponse)
+	err = CheckResponse(resp, errorResponse)
 	if err != nil {
 		return response, err
 	}
 
-	if ok && successResponse != nil {
-		if w, ok := successResponse.(io.Writer); ok {
-			_, err = io.Copy(w, resp.Body)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			err = json.NewDecoder(resp.Body).Decode(successResponse)
-			if err != nil {
-				return nil, err
-			}
+	data, err := io.ReadAll(resp.Body)
+	if successResponse != nil {
+		err = parseBody(data, successResponse)
+		if err != nil {
+			return response, err
 		}
 	}
 

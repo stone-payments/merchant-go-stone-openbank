@@ -14,6 +14,15 @@ import (
 	"github.com/stone-co/go-stone-openbank/types"
 )
 
+type data struct {
+	Field  string `json:"field,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
+
+type responseBody struct {
+	Data []data `json:"data,omitempty"`
+}
+
 var (
 	mux    *http.ServeMux
 	client *Client
@@ -41,27 +50,6 @@ func testMethod(t *testing.T, r *http.Request, expected string) {
 	}
 }
 
-func testClientServices(t *testing.T, c *Client) {
-	services := []string{
-		"Account",
-		"Institution",
-		"PaymentLink",
-		"PaymentInvoice",
-		"Pix",
-		"Topups",
-		"Transfer",
-	}
-
-	cp := reflect.ValueOf(c)
-	cv := reflect.Indirect(cp)
-
-	for _, s := range services {
-		if cv.FieldByName(s).IsNil() {
-			t.Errorf("c.%s shouldn't be nil", s)
-		}
-	}
-}
-
 func testClientDefaultURLs(t *testing.T, c *Client) {
 	if c.ApiBaseURL == nil || c.ApiBaseURL.String() != prodAPIBaseURL {
 		t.Errorf("NewClient ApiBaseURL = %v, expected %v", c.ApiBaseURL, prodAPIBaseURL)
@@ -78,7 +66,6 @@ func testClientDefaultURLs(t *testing.T, c *Client) {
 
 func testClientDefaults(t *testing.T, c *Client) {
 	testClientDefaultURLs(t, c)
-	testClientServices(t, c)
 }
 
 func TestNewClient(t *testing.T) {
@@ -126,31 +113,45 @@ func TestNewAPIRequest(t *testing.T) {
 
 func TestCheckResponse(t *testing.T) {
 	testCases := []struct {
-		Name            string
-		ResponseBody    types.Product
-		StatusCode      int
-		ExpectedSuccess bool
-		ErrorResponse   *types.Product
+		Name          string
+		ResponseBody  responseBody
+		StatusCode    int
+		ExpectedError bool
+		ErrorResponse *responseBody
+		RequestMethod string
+		RequestUrl    string
 	}{
 		{
-			Name: "CheckResponse should return false for unsuccessful status code",
-			ResponseBody: types.Product{
-				Value: 10,
-				Name:  "test-name",
+			Name: "Should return error for unsuccessful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test",
+						Detail: "Error",
+					},
+				},
 			},
-			StatusCode:      400,
-			ExpectedSuccess: false,
-			ErrorResponse:   new(types.Product),
+			StatusCode:    400,
+			ExpectedError: true,
+			ErrorResponse: new(responseBody),
+			RequestUrl:    "http://127.0.0.1:3001/test",
+			RequestMethod: "GET",
 		},
 		{
-			Name: "CheckResponse should return true for successful status code",
-			ResponseBody: types.Product{
-				Value: 10,
-				Name:  "test-name",
+			Name: "Should not return error for successful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test",
+						Detail: "Success",
+					},
+				},
 			},
-			StatusCode:      200,
-			ExpectedSuccess: true,
-			ErrorResponse:   new(types.Product),
+			StatusCode:    200,
+			ExpectedError: false,
+			ErrorResponse: new(responseBody),
+			RequestUrl:    "http://127.0.0.1:3001/test",
+			RequestMethod: "GET",
 		},
 	}
 
@@ -158,26 +159,98 @@ func TestCheckResponse(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// Arrange
 			jsonBody, _ := json.Marshal(testCase.ResponseBody)
+			reqUrl, _ := url.Parse(testCase.RequestUrl)
 
 			response := &http.Response{
 				StatusCode: testCase.StatusCode,
 				Body:       io.NopCloser(bytes.NewReader(jsonBody)),
+				Request: &http.Request{
+					Method: testCase.RequestMethod,
+					URL:    reqUrl,
+				},
 			}
 
 			// Act
-			success, err := CheckResponse(response, testCase.ErrorResponse)
+			err := CheckResponse(response, testCase.ErrorResponse)
 
 			// Asserts
+			if testCase.ExpectedError && err == nil {
+				t.Error("expected err got nil")
+			}
+
+			if testCase.ExpectedError && !reflect.DeepEqual(testCase.ErrorResponse, &testCase.ResponseBody) {
+				t.Errorf("expected error response: %+v, got %+v", &testCase.ResponseBody, testCase.ErrorResponse)
+			}
+		})
+	}
+}
+
+func TestDoMethod(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		ResponseBody  responseBody
+		ExpectedError bool
+		Method        string
+		Path          string
+	}{
+		{
+			Name: "Should return error for unsuccessful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test field",
+						Detail: "Error",
+					},
+				},
+			},
+			ExpectedError: true,
+			Method:        "GET",
+			Path:          "http://127.0.0.1:3001/error-test",
+		},
+		{
+			Name: "Should not return error for successful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test field",
+						Detail: "Success",
+					},
+				},
+			},
+			ExpectedError: false,
+			Method:        "GET",
+			Path:          "http://127.0.0.1:3001/success-test",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// Arrange
+			c, _ := NewClient()
+
+			reqUrl, err := url.Parse(testCase.Path)
 			if err != nil {
-				t.Fatalf("error checking response: %v", err)
+				t.Fatalf("error converting string to URL: %v", err)
 			}
 
-			if success != testCase.ExpectedSuccess {
-				t.Errorf("expected success: %v, got %v", testCase.ExpectedSuccess, success)
+			request := &http.Request{
+				Method: testCase.Method,
+				URL:    reqUrl,
 			}
 
-			if !success && !testCase.ExpectedSuccess && !reflect.DeepEqual(testCase.ErrorResponse, &testCase.ResponseBody) {
-				t.Errorf("expected error response: %v, got %v", testCase.ResponseBody, testCase.ErrorResponse)
+			successResponse := new(responseBody)
+			errorResponse := new(responseBody)
+
+			// Act
+			response, err := c.Do(request, successResponse, errorResponse)
+
+			// Asserts
+			if err != nil && response == nil {
+				t.Fatalf("unable to execute request: %v", err)
+			}
+
+			if err != nil && !reflect.DeepEqual(errorResponse, &testCase.ResponseBody) {
+				t.Errorf("expected error response: %+v, got %+v", &testCase.ResponseBody, errorResponse)
 			}
 		})
 	}
