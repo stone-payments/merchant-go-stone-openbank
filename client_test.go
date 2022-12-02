@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -78,7 +77,7 @@ func TestNewAPIRequest(t *testing.T) {
 		t.Errorf("NewAPIRequest(%v) URL = %v, expected %v", inURL, req.URL, outURL)
 	}
 
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 	if string(body) != outBody {
 		t.Errorf("NewAPIRequest(%v)Body = %v, expected %v", inBody, string(body), outBody)
 	}
@@ -113,7 +112,7 @@ func TestCheckResponse(t *testing.T) {
 			ExpectedError: true,
 			ErrorResponse: new(responseBody),
 			RequestUrl:    "http://127.0.0.1:3001/test",
-			RequestMethod: "GET",
+			RequestMethod: http.MethodGet,
 		},
 		{
 			Name: "Should not return error for successful status code",
@@ -129,7 +128,7 @@ func TestCheckResponse(t *testing.T) {
 			ExpectedError: false,
 			ErrorResponse: new(responseBody),
 			RequestUrl:    "http://127.0.0.1:3001/test",
-			RequestMethod: "GET",
+			RequestMethod: http.MethodGet,
 		},
 	}
 
@@ -182,7 +181,7 @@ func TestDoMethod(t *testing.T) {
 				},
 			},
 			ExpectedError: true,
-			Method:        "GET",
+			Method:        http.MethodGet,
 			Path:          "http://127.0.0.1:3001/error-test",
 		},
 		{
@@ -196,7 +195,7 @@ func TestDoMethod(t *testing.T) {
 				},
 			},
 			ExpectedError: false,
-			Method:        "GET",
+			Method:        http.MethodGet,
 			Path:          "http://127.0.0.1:3001/success-test",
 		},
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 
 	openbank "github.com/stone-co/go-stone-openbank"
@@ -36,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	request, err := client.NewAPIRequest("GET", "/example", nil)
+	request, err := client.NewAPIRequest(http.MethodGet, "/example", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
