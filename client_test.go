@@ -6,12 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
-
-	"github.com/stone-co/go-stone-openbank/types"
 )
 
 type data struct {
@@ -21,33 +18,6 @@ type data struct {
 
 type responseBody struct {
 	Data []data `json:"data,omitempty"`
-}
-
-var (
-	mux    *http.ServeMux
-	client *Client
-	server *httptest.Server
-)
-
-func setup() {
-	mux = http.NewServeMux()
-	server = httptest.NewServer(mux)
-
-	client, _ = NewClient()
-	url, _ := url.Parse(server.URL)
-	client.AccountURL = url
-	client.ApiBaseURL = url
-	client.SiteURL = url
-}
-
-func teardown() {
-	server.Close()
-}
-
-func testMethod(t *testing.T, r *http.Request, expected string) {
-	if expected != r.Method {
-		t.Errorf("Request method = %v, expected %v", r.Method, expected)
-	}
 }
 
 func testClientDefaultURLs(t *testing.T, c *Client) {
@@ -92,7 +62,15 @@ func TestNewAPIRequest(t *testing.T) {
 	c, _ := NewClient()
 
 	inURL, outURL := "/test", prodAPIBaseURL+"/test"
-	inBody, outBody := &types.PaymentLinkInput{AccountID: "abc123"},
+	inBody, outBody := struct {
+		AccountID string     `json:"account_id"`
+		Items     []struct{} `json:"items"`
+		Customer  struct {
+			Name string `json:"name"`
+		} `json:"customer"`
+		Closed   bool       `json:"closed"`
+		Payments []struct{} `json:"payments"`
+	}{AccountID: "abc123"},
 		`{"account_id":"abc123","items":null,"customer":{"name":""},"closed":false,"payments":null}`+"\n"
 	req, _ := c.NewAPIRequest(http.MethodPost, inURL, inBody)
 
@@ -238,8 +216,7 @@ func TestDoMethod(t *testing.T) {
 				URL:    reqUrl,
 			}
 
-			successResponse := new(responseBody)
-			errorResponse := new(responseBody)
+			successResponse, errorResponse := new(responseBody), new(responseBody)
 
 			// Act
 			response, err := c.Do(request, successResponse, errorResponse)
