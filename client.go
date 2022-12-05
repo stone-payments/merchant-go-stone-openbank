@@ -217,20 +217,18 @@ func (r *ErrorResponse) Error() string {
 }
 
 func parseBody(data []byte, body interface{}) error {
-	if len(data) > 0 {
-		if body != nil {
-			if w, ok := body.(io.Writer); ok {
-				_, err := io.Copy(w, bytes.NewReader(data))
-				if err != nil {
-					return err
-				}
-			} else {
-				err := json.Unmarshal(data, body)
-				if err != nil {
-					return err
-				}
-				return nil
+	if len(data) > 0 && body != nil {
+		if w, ok := body.(io.Writer); ok {
+			_, err := io.Copy(w, bytes.NewReader(data))
+			if err != nil {
+				return err
 			}
+		} else {
+			err := json.Unmarshal(data, body)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 	return nil
@@ -243,12 +241,9 @@ func CheckResponse(r *http.Response, errorBody interface{}) error {
 
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := io.ReadAll(r.Body)
-	if err == nil && len(data) > 0 {
-		if errorBody != nil {
-			err := json.Unmarshal(data, errorBody)
-			if err != nil {
-				errorResponse.Message = string(data)
-			}
+	if err == nil {
+		if err = parseBody(data, errorBody); err != nil {
+			errorResponse.Message = string(data)
 		}
 		errorResponse.TransferError = errorBody
 	}
@@ -326,11 +321,8 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 	}
 
 	data, err := io.ReadAll(resp.Body)
-	if successResponse != nil {
-		err = parseBody(data, successResponse)
-		if err != nil {
-			return response, err
-		}
+	if err = parseBody(data, successResponse); err != nil {
+		return response, err
 	}
 
 	return response, err
