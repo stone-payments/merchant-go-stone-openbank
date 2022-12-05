@@ -16,7 +16,7 @@
 - [ ] PR description updated with stage evidences
 
 ## Descreva como foi o teste e coloque em anexo as evidências.
-> Notes: Inclua envidências sobre mudanças!
+> Notes: Inclua evidências sobre mudanças!
 
 1. evidências da demanda 1
 2. evidências da demanda 2
