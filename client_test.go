@@ -1,62 +1,22 @@
 package openbank
 
 import (
-	"io/ioutil"
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
-
-	"github.com/stone-co/go-stone-openbank/types"
 )
 
-var (
-	mux    *http.ServeMux
-	client *Client
-	server *httptest.Server
-)
-
-func setup() {
-	mux = http.NewServeMux()
-	server = httptest.NewServer(mux)
-
-	client, _ = NewClient()
-	url, _ := url.Parse(server.URL)
-	client.AccountURL = url
-	client.ApiBaseURL = url
-	client.SiteURL = url
+type data struct {
+	Field  string `json:"field,omitempty"`
+	Detail string `json:"detail,omitempty"`
 }
 
-func teardown() {
-	server.Close()
-}
-
-func testMethod(t *testing.T, r *http.Request, expected string) {
-	if expected != r.Method {
-		t.Errorf("Request method = %v, expected %v", r.Method, expected)
-	}
-}
-
-func testClientServices(t *testing.T, c *Client) {
-	services := []string{
-		"Account",
-		"Institution",
-		"PaymentLink",
-		"PaymentInvoice",
-		"Pix",
-		"Topups",
-		"Transfer",
-	}
-
-	cp := reflect.ValueOf(c)
-	cv := reflect.Indirect(cp)
-
-	for _, s := range services {
-		if cv.FieldByName(s).IsNil() {
-			t.Errorf("c.%s shouldn't be nil", s)
-		}
-	}
+type responseBody struct {
+	Data []data `json:"data,omitempty"`
 }
 
 func testClientDefaultURLs(t *testing.T, c *Client) {
@@ -75,7 +35,6 @@ func testClientDefaultURLs(t *testing.T, c *Client) {
 
 func testClientDefaults(t *testing.T, c *Client) {
 	testClientDefaultURLs(t, c)
-	testClientServices(t, c)
 }
 
 func TestNewClient(t *testing.T) {
@@ -102,7 +61,15 @@ func TestNewAPIRequest(t *testing.T) {
 	c, _ := NewClient()
 
 	inURL, outURL := "/test", prodAPIBaseURL+"/test"
-	inBody, outBody := &types.PaymentLinkInput{AccountID: "abc123"},
+	inBody, outBody := struct {
+		AccountID string     `json:"account_id"`
+		Items     []struct{} `json:"items"`
+		Customer  struct {
+			Name string `json:"name"`
+		} `json:"customer"`
+		Closed   bool       `json:"closed"`
+		Payments []struct{} `json:"payments"`
+	}{AccountID: "abc123"},
 		`{"account_id":"abc123","items":null,"customer":{"name":""},"closed":false,"payments":null}`+"\n"
 	req, _ := c.NewAPIRequest(http.MethodPost, inURL, inBody)
 
@@ -110,7 +77,7 @@ func TestNewAPIRequest(t *testing.T) {
 		t.Errorf("NewAPIRequest(%v) URL = %v, expected %v", inURL, req.URL, outURL)
 	}
 
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 	if string(body) != outBody {
 		t.Errorf("NewAPIRequest(%v)Body = %v, expected %v", inBody, string(body), outBody)
 	}
@@ -118,5 +85,149 @@ func TestNewAPIRequest(t *testing.T) {
 	userAgent := req.Header.Get("User-Agent")
 	if c.UserAgent != userAgent {
 		t.Errorf("NewAPIRequest() User-Agent = %v, expected %v", userAgent, c.UserAgent)
+	}
+}
+
+func TestCheckResponse(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		ResponseBody  responseBody
+		StatusCode    int
+		ExpectedError bool
+		ErrorResponse *responseBody
+		RequestMethod string
+		RequestUrl    string
+	}{
+		{
+			Name: "Should return error for unsuccessful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test",
+						Detail: "Error",
+					},
+				},
+			},
+			StatusCode:    400,
+			ExpectedError: true,
+			ErrorResponse: new(responseBody),
+			RequestUrl:    "http://127.0.0.1:3001/test",
+			RequestMethod: http.MethodGet,
+		},
+		{
+			Name: "Should not return error for successful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test",
+						Detail: "Success",
+					},
+				},
+			},
+			StatusCode:    200,
+			ExpectedError: false,
+			ErrorResponse: new(responseBody),
+			RequestUrl:    "http://127.0.0.1:3001/test",
+			RequestMethod: http.MethodGet,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// Arrange
+			jsonBody, _ := json.Marshal(testCase.ResponseBody)
+			reqUrl, _ := url.Parse(testCase.RequestUrl)
+
+			response := &http.Response{
+				StatusCode: testCase.StatusCode,
+				Body:       io.NopCloser(bytes.NewReader(jsonBody)),
+				Request: &http.Request{
+					Method: testCase.RequestMethod,
+					URL:    reqUrl,
+				},
+			}
+
+			// Act
+			err := CheckResponse(response, testCase.ErrorResponse)
+
+			// Asserts
+			if testCase.ExpectedError && err == nil {
+				t.Error("expected err got nil")
+			}
+
+			if testCase.ExpectedError && !reflect.DeepEqual(testCase.ErrorResponse, &testCase.ResponseBody) {
+				t.Errorf("expected error response: %+v, got %+v", &testCase.ResponseBody, testCase.ErrorResponse)
+			}
+		})
+	}
+}
+
+func TestDoMethod(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		ResponseBody  responseBody
+		ExpectedError bool
+		Method        string
+		Path          string
+	}{
+		{
+			Name: "Should return error for unsuccessful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test field",
+						Detail: "Error",
+					},
+				},
+			},
+			ExpectedError: true,
+			Method:        http.MethodGet,
+			Path:          "http://127.0.0.1:3001/error-test",
+		},
+		{
+			Name: "Should not return error for successful status code",
+			ResponseBody: responseBody{
+				Data: []data{
+					{
+						Field:  "Test field",
+						Detail: "Success",
+					},
+				},
+			},
+			ExpectedError: false,
+			Method:        http.MethodGet,
+			Path:          "http://127.0.0.1:3001/success-test",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// Arrange
+			c, _ := NewClient()
+
+			reqUrl, err := url.Parse(testCase.Path)
+			if err != nil {
+				t.Fatalf("error converting string to URL: %v", err)
+			}
+
+			request := &http.Request{
+				Method: testCase.Method,
+				URL:    reqUrl,
+			}
+
+			successResponse, errorResponse := new(responseBody), new(responseBody)
+
+			// Act
+			response, err := c.Do(request, successResponse, errorResponse)
+
+			// Asserts
+			if err != nil && response == nil {
+				t.Fatalf("unable to execute request: %v", err)
+			}
+
+			if err != nil && !reflect.DeepEqual(errorResponse, &testCase.ResponseBody) {
+				t.Errorf("expected error response: %+v, got %+v", &testCase.ResponseBody, errorResponse)
+			}
+		})
 	}
 }

@@ -45,7 +45,7 @@ func (c *Client) Authenticate() error {
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	var token oauth2.Token
-	_, err = c.Do(req, &token)
+	_, err = c.Do(req, &token, new(TransferError))
 	if err != nil {
 		return err
 	}
