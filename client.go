@@ -300,7 +300,7 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 	}
 
 	txn := newrelic.FromContext(req.Context())
-	defer newrelic.StartSegment(txn, "client request").End()
+	defer newrelic.StartSegment(txn, "merchant openbank client request").End()
 
 	s := newrelic.StartExternalSegment(txn, req)
 	defer s.End()
