@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -298,6 +299,12 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 		c.log.Infof(">>> REQUEST:\n%s", string(d))
 	}
 
+	txn := newrelic.FromContext(req.Context())
+	defer newrelic.StartSegment(txn, "client request").End()
+
+	s := newrelic.StartExternalSegment(txn, req)
+	defer s.End()
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -313,6 +320,7 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 		c.log.Infof("<<< RESULT:\n%s", string(dr))
 	}
 
+	s.Response = resp
 	response := &Response{Response: resp}
 
 	err = CheckResponse(resp, errorResponse)
