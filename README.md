@@ -1,6 +1,6 @@
 # merchant-go-stone-openbank
 
-A forked Go library of [openbank-go-stone-openbank](https://github.com/stone-payments/go-stone-openbank) to connect [Stone Open Banking API](https://docs.openbank.stone.com.br/)
+A forked Go library of [go-stone-openbank](https://github.com/stone-payments/go-stone-openbank) to connect [Stone Open Banking API](https://docs.openbank.stone.com.br/)
 
 ## How to install
 
