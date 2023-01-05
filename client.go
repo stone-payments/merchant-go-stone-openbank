@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
-	"github.com/stone-co/merchant-go-stone-openbank/types"
+	"github.com/stone-payments/merchant-go-stone-openbank/types"
 )
 
 const (
