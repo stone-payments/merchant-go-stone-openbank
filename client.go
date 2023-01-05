@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
-	"github.com/stone-co/go-stone-openbank/types"
+	"github.com/stone-co/merchant-go-stone-openbank/types"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 	sandboxAPIBaseURL     = "https://sandbox-api.openbank.stone.com.br"
 	prodSiteURL           = "https://conta.stone.com.br"
 	sandboxSiteURL        = "https://sandbox.conta.stone.com.br"
-	userAgent             = "go-stone-openbank/" + libraryVersion
+	userAgent             = "merchant-go-stone-openbank/" + libraryVersion
 	idempotencyKeyMaxSize = 72
 )
 

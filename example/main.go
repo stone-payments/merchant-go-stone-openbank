@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	openbank "github.com/stone-co/go-stone-openbank"
+	openbank "github.com/stone-co/merchant-go-stone-openbank"
 )
 
 func main() {
