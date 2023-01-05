@@ -5,7 +5,7 @@ A Go library to connect with [Stone Open Banking API](https://docs.openbank.ston
 ## How to install
 
 ```sh
-go get github.com/stone-co/go-stone-openbank
+go get github.com/stone-payments/merchant-go-stone-openbank
 ```
 
 ## Example Usage
@@ -14,8 +14,8 @@ go get github.com/stone-co/go-stone-openbank
 package main
 
 import (
-	openbank "github.com/stone-co/go-stone-openbank"
-	"github.com/stone-co/go-stone-openbank/types"
+	openbank "github.com/stone-payments/merchant-go-stone-openbank"
+	"github.com/stone-payments/merchant-go-stone-openbank/types"
 )
 
 func main() {
@@ -94,4 +94,4 @@ func readFileContent(path string) []byte {
 }
 ```
 
-see full [example](https://github.com/stone-co/go-stone-openbank/blob/master/example/main.go)
+see full [example](https://github.com/stone-payments/merchant-go-stone-openbank/blob/master/example/main.go)
