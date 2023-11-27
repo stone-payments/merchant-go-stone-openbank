@@ -2,6 +2,7 @@ package openbank
 
 import (
 	"bytes"
+	"context"
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
@@ -13,12 +14,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/newrelic/go-agent/v3/newrelic"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/sirupsen/logrus"
 	"github.com/stone-payments/merchant-go-stone-openbank/types"
+	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -56,6 +59,8 @@ type Client struct {
 	UserAgent string
 
 	token oauth2.Token
+
+	otelTracer trace.Tracer
 }
 
 func NewClient(opts ...ClientOpt) (*Client, error) {
@@ -104,6 +109,12 @@ type ClientOpt func(*Client)
 func WithClientID(key string) ClientOpt {
 	return func(c *Client) {
 		c.ClientID = key
+	}
+}
+
+func WithTracer(tracer trace.Tracer) ClientOpt {
+	return func(c *Client) {
+		c.otelTracer = tracer
 	}
 }
 
@@ -280,7 +291,7 @@ func (c *Client) NewAPIRequest(method, pathStr string, body interface{}) (*http.
 	return req, nil
 }
 
-//AddIdempotencyHeader add in request the header used to realize idempotent operations
+// AddIdempotencyHeader add in request the header used to realize idempotent operations
 func (c *Client) AddIdempotencyHeader(req *http.Request, idempotencyKey string) error {
 	trimmedIdempotencyKey := strings.TrimSpace(idempotencyKey)
 	if trimmedIdempotencyKey != "" {
@@ -294,19 +305,24 @@ func (c *Client) AddIdempotencyHeader(req *http.Request, idempotencyKey string) 
 }
 
 func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{}) (*Response, error) {
+	_, span := c.newSpan(
+		req.Context(),
+		"merchant openbank client request",
+		trace.SpanKindClient,
+	)
+	defer c.endSpan(span)
+
+	c.addSpanAttribute(span, attribute.String("request.path", req.URL.String()))
+	c.addSpanAttribute(span, attribute.String("request.method", req.Method))
+
 	if c.debug {
 		d, _ := httputil.DumpRequestOut(req, true)
 		c.log.Infof(">>> REQUEST:\n%s", string(d))
 	}
 
-	txn := newrelic.FromContext(req.Context())
-	defer newrelic.StartSegment(txn, "merchant openbank client request").End()
-
-	s := newrelic.StartExternalSegment(txn, req)
-	defer s.End()
-
 	resp, err := c.client.Do(req)
 	if err != nil {
+		c.setSpanStatus(span, codes.Error, "error executing request")
 		return nil, err
 	}
 
@@ -320,18 +336,57 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 		c.log.Infof("<<< RESULT:\n%s", string(dr))
 	}
 
-	s.Response = resp
 	response := &Response{Response: resp}
 
 	err = CheckResponse(resp, errorResponse)
 	if err != nil {
+		c.setSpanStatus(span, codes.Error, "client request error")
+		c.spanRecordError(span, err)
+
 		return response, err
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err = parseBody(data, successResponse); err != nil {
+		c.setSpanStatus(span, codes.Error, "client request error")
+		c.spanRecordError(span, err)
+
 		return response, err
 	}
 
+	c.setSpanStatus(span, codes.Ok, "client request succeeded")
+
 	return response, err
+}
+
+func (c *Client) newSpan(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {
+	if c.otelTracer != nil {
+		return c.otelTracer.Start(ctx, name, trace.WithSpanKind(kind))
+	}
+
+	return ctx, nil
+}
+
+func (c *Client) setSpanStatus(span trace.Span, code codes.Code, description string) {
+	if span != nil {
+		span.SetStatus(code, description)
+	}
+}
+
+func (c *Client) spanRecordError(span trace.Span, err error) {
+	if span != nil {
+		span.RecordError(err)
+	}
+}
+
+func (c *Client) endSpan(span trace.Span) {
+	if span != nil {
+		span.End()
+	}
+}
+
+func (c *Client) addSpanAttribute(span trace.Span, attributes ...attribute.KeyValue) {
+	if span != nil {
+		span.SetAttributes(attributes...)
+	}
 }

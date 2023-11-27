@@ -10,19 +10,29 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
 
-func (c *Client) Authenticate() error {
+func (c *Client) Authenticate(sCtx context.Context) error {
+	ctx, span := c.newSpan(sCtx, "openbank auth", trace.SpanKindClient)
+	defer c.endSpan(span)
+
 	if c.validToken() {
+		c.setSpanStatus(span, codes.Ok, "authentication succeeded")
 		return nil
 	}
 
 	claims := c.authClaims()
 	tokenString, err := c.generateToken(claims)
 	if err != nil {
+		c.setSpanStatus(span, codes.Error, "error generating token")
+		c.spanRecordError(span, err)
+
 		return err
 	}
 
@@ -34,22 +44,31 @@ func (c *Client) Authenticate() error {
 
 	u, err := c.AccountURL.Parse("/auth/realms/stone_bank/protocol/openid-connect/token")
 	if err != nil {
+		c.setSpanStatus(span, codes.Error, "error parsing URL")
+		c.spanRecordError(span, err)
+
 		return err
 	}
 
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(data.Encode()))
 	if err != nil {
+		c.setSpanStatus(span, codes.Error, "error creating request")
+		c.spanRecordError(span, err)
+
 		return err
 	}
 	req.Header.Add("user-agent", c.UserAgent)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	req = req.WithContext(ctx)
 
 	var token oauth2.Token
 	_, err = c.Do(req, &token, new(TransferError))
 	if err != nil {
+		c.setSpanStatus(span, codes.Error, "error executing request")
+		c.spanRecordError(span, err)
+
 		return err
 	}
-	ctx := context.Background()
 	config := &oauth2.Config{}
 	ts := config.TokenSource(ctx, &token)
 
@@ -57,6 +76,8 @@ func (c *Client) Authenticate() error {
 	defer c.m.Unlock()
 	c.client = oauth2.NewClient(ctx, ts)
 	c.token = token
+
+	c.setSpanStatus(span, codes.Ok, "authentication succeeded")
 
 	return nil
 }
