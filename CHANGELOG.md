@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0](https://github.com/stone-payments/merchant-go-stone-openbank/compare/v2.0.0...v3.0.0) (2023-11-27)
+
+
+### Features
+
+* Migrates from newrelic to datadog ([77ec1a0](https://github.com/stone-payments/merchant-go-stone-openbank/commit/77ec1a07a69e09a02c94d457397ac9b7e233f9ba))
+
 ## [2.0.0](https://github.com/stone-payments/merchant-go-stone-openbank/compare/v1.2.0...v2.0.0) (2023-11-27)
 
 
