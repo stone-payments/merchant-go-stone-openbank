@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err := client.Authenticate()
+	err := client.Authenticate(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
