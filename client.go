@@ -312,8 +312,9 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 	)
 	defer c.endSpan(span)
 
-	c.addSpanAttribute(span, attribute.String("request.path", req.URL.String()))
-	c.addSpanAttribute(span, attribute.String("request.method", req.Method))
+	c.addSpanAttribute(span, attribute.String("http.request.path", req.URL.String()))
+	c.addSpanAttribute(span, attribute.String("http.request.protocol", req.Proto))
+	c.addSpanAttribute(span, attribute.String("http.request.method", req.Method))
 
 	if c.debug {
 		d, _ := httputil.DumpRequestOut(req, true)
@@ -354,6 +355,7 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 		return response, err
 	}
 
+	c.addSpanAttribute(span, attribute.Int("http.response.status_code", resp.StatusCode))
 	c.setSpanStatus(span, codes.Ok, "client request succeeded")
 
 	return response, err
