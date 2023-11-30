@@ -327,6 +327,8 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 		return nil, err
 	}
 
+	c.addSpanAttribute(span, attribute.Int("http.response.status_code", resp.StatusCode))
+
 	defer func() {
 		if rerr := resp.Body.Close(); err == nil {
 			err = rerr
@@ -355,7 +357,6 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 		return response, err
 	}
 
-	c.addSpanAttribute(span, attribute.Int("http.response.status_code", resp.StatusCode))
 	c.setSpanStatus(span, codes.Ok, "client request succeeded")
 
 	return response, err
