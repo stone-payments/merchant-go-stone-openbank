@@ -324,6 +324,7 @@ func (c *Client) Do(req *http.Request, successResponse, errorResponse interface{
 	resp, err := c.client.Do(req)
 	if err != nil {
 		c.setSpanStatus(span, codes.Error, "error executing request")
+		c.recordError(span, err)
 		return nil, err
 	}
 
@@ -391,5 +392,11 @@ func (c *Client) endSpan(span trace.Span) {
 func (c *Client) addSpanAttribute(span trace.Span, attributes ...attribute.KeyValue) {
 	if span != nil {
 		span.SetAttributes(attributes...)
+	}
+}
+
+func (c *Client) recordError(span trace.Span, err error) {
+	if span != nil {
+		span.RecordError(err)
 	}
 }
