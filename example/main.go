@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -33,7 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := client.Authenticate(); err != nil {
+	if err := client.Authenticate(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 
