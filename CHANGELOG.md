@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.1.0](https://github.com/stone-payments/merchant-go-stone-openbank/compare/v3.0.0...v3.1.0) (2025-09-16)
+
+
+### Features
+
+* updates dependencies and go version ([fc277d2](https://github.com/stone-payments/merchant-go-stone-openbank/commit/fc277d2e84eb6208e32691319aa945313f049d9c))
+
 ## [3.0.0](https://github.com/stone-payments/merchant-go-stone-openbank/compare/v2.0.0...v3.0.0) (2023-11-27)
 
 
