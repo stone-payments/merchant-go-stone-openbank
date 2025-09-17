@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
-	"github.com/stone-payments/merchant-go-stone-openbank/types"
+	"github.com/stone-payments/merchant-go-stone-openbank/v3/types"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/oauth2"
 )

@@ -1,4 +1,4 @@
-module github.com/stone-payments/merchant-go-stone-openbank
+module github.com/stone-payments/merchant-go-stone-openbank/v3
 
 go 1.25.1
 
