@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	openbank "github.com/stone-payments/merchant-go-stone-openbank"
+	openbank "github.com/stone-payments/merchant-go-stone-openbank/v3"
 )
 
 func main() {

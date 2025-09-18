@@ -5,7 +5,7 @@ A forked Go library of [go-stone-openbank](https://github.com/stone-payments/go-
 ## How to install
 
 ```sh
-go get github.com/stone-payments/merchant-go-stone-openbank
+go get github.com/stone-payments/merchant-go-stone-openbank/v3
 ```
 
 ## Example Usage
@@ -14,8 +14,12 @@ go get github.com/stone-payments/merchant-go-stone-openbank
 package main
 
 import (
-	openbank "github.com/stone-payments/merchant-go-stone-openbank"
-	"github.com/stone-payments/merchant-go-stone-openbank/types"
+	"context"
+	"io/ioutil"
+	"log"
+	"os"
+
+	openbank "github.com/stone-payments/merchant-go-stone-openbank/v3"
 )
 
 func main() {
@@ -30,13 +34,13 @@ func main() {
 		openbank.SetConsentURL(consentURL),
 		openbank.WithPEMPrivateKey(pemPrivKey),
 		openbank.UseSandbox(),
-	//	openbank.EnableDebug(),
+		//	openbank.EnableDebug(),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err := client.Authenticate(context.Background())
+	err = client.Authenticate(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
